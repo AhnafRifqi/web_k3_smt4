@@ -50,6 +50,12 @@ class SopExecutionController extends Controller
         return redirect()->route('sop-executions.index')->with('success', 'Pelaksanaan SOP berhasil dicatat.');
     }
 
+    public function show(SopExecution $sopExecution)
+    {
+        $sopExecution->load(['employee', 'sop', 'recorder']);
+        return view('sop-executions.show', compact('sopExecution'));
+    }
+
     public function edit(SopExecution $sopExecution)
     {
         $employees = Employee::where('status', 'aktif')->get();

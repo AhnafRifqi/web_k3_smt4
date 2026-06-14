@@ -11,6 +11,12 @@ class DepartmentController extends Controller {
         return redirect()->route('departments.index')->with('success', 'Departemen berhasil ditambahkan.');
     }
     public function edit(Department $department) { return view('departments.edit', compact('department')); }
+
+    public function show(Department $department)
+    {
+        return view('departments.show', compact('department'));
+    }
+
     public function update(Request $request, Department $department) {
         $request->validate(['name' => 'required|max:100', 'code' => 'required|max:10|unique:departments,code,' . $department->id, 'description' => 'nullable']);
         $department->update($request->only('name', 'code', 'description', 'is_active'));

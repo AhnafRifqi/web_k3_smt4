@@ -10,6 +10,7 @@ use App\Http\Controllers\K3DocumentController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\SopController;
 use App\Http\Controllers\SopExecutionController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,9 +29,14 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Profile
+    Route::middleware('role:admin,supervisor_k3,auditor,karyawan')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    });
+
     // ---- SOP (semua role bisa lihat) ----
     Route::get('/sop', [SopController::class, 'index'])->name('sops.index');
-    Route::get('/sop/{sop}', [SopController::class, 'show'])->name('sops.show');
 
     // ---- SOP Management (admin, supervisor_k3) ----
     Route::middleware('role:admin,supervisor_k3')->group(function () {
@@ -40,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/sop/{sop}', [SopController::class, 'update'])->name('sops.update');
         Route::delete('/sop/{sop}', [SopController::class, 'destroy'])->name('sops.destroy');
     });
+    Route::get('/sop/{sop}', [SopController::class, 'show'])->name('sops.show');
 
     // ---- Karyawan (admin, supervisor_k3) ----
     Route::middleware('role:admin,supervisor_k3')->group(function () {
@@ -55,8 +62,6 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // ---- Dokumen K3 ----
-    Route::get('/k3-documents', [K3DocumentController::class, 'index'])->name('k3-documents.index');
-    Route::get('/k3-documents/{k3Document}', [K3DocumentController::class, 'show'])->name('k3-documents.show');
     Route::middleware('role:admin,supervisor_k3')->group(function () {
         Route::get('/k3-documents/create', [K3DocumentController::class, 'create'])->name('k3-documents.create');
         Route::post('/k3-documents', [K3DocumentController::class, 'store'])->name('k3-documents.store');
@@ -64,6 +69,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/k3-documents/{k3Document}', [K3DocumentController::class, 'update'])->name('k3-documents.update');
         Route::delete('/k3-documents/{k3Document}', [K3DocumentController::class, 'destroy'])->name('k3-documents.destroy');
     });
+    Route::get('/k3-documents', [K3DocumentController::class, 'index'])->name('k3-documents.index');
+    Route::get('/k3-documents/{k3Document}', [K3DocumentController::class, 'show'])->name('k3-documents.show');
 
     // ---- Pelaksanaan SOP ----
     Route::get('/sop-executions', [SopExecutionController::class, 'index'])->name('sop-executions.index');
@@ -74,11 +81,10 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/sop-executions/{sopExecution}', [SopExecutionController::class, 'update'])->name('sop-executions.update');
         Route::delete('/sop-executions/{sopExecution}', [SopExecutionController::class, 'destroy'])->name('sop-executions.destroy');
     });
+    Route::get('/sop-executions/{sopExecution}', [SopExecutionController::class, 'show'])->name('sop-executions.show');
 
     // ---- Audit ----
     Route::get('/audits', [AuditController::class, 'index'])->name('audits.index');
-    Route::get('/audits/{audit}', [AuditController::class, 'show'])->name('audits.show');
-    Route::get('/audits/{audit}/export-pdf', [AuditController::class, 'exportPdf'])->name('audits.export-pdf');
     Route::middleware('role:admin,auditor')->group(function () {
         Route::get('/audits/create', [AuditController::class, 'create'])->name('audits.create');
         Route::post('/audits', [AuditController::class, 'store'])->name('audits.store');
@@ -86,6 +92,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/audits/{audit}', [AuditController::class, 'update'])->name('audits.update');
         Route::delete('/audits/{audit}', [AuditController::class, 'destroy'])->name('audits.destroy');
     });
+    Route::get('/audits/{audit}', [AuditController::class, 'show'])->name('audits.show');
+    Route::get('/audits/{audit}/export-pdf', [AuditController::class, 'exportPdf'])->name('audits.export-pdf');
 
     // ---- Temuan Audit ----
     Route::middleware('role:admin,auditor,supervisor_k3')->group(function () {
@@ -94,7 +102,6 @@ Route::middleware(['auth'])->group(function () {
 
     // ---- CAPA ----
     Route::get('/capa', [CapaController::class, 'index'])->name('capa.index');
-    Route::get('/capa/{capa}', [CapaController::class, 'show'])->name('capa.show');
     Route::middleware('role:admin,supervisor_k3')->group(function () {
         Route::get('/capa/create', [CapaController::class, 'create'])->name('capa.create');
         Route::post('/capa', [CapaController::class, 'store'])->name('capa.store');
@@ -102,6 +109,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/capa/{capa}', [CapaController::class, 'update'])->name('capa.update');
         Route::delete('/capa/{capa}', [CapaController::class, 'destroy'])->name('capa.destroy');
     });
+    Route::get('/capa/{capa}', [CapaController::class, 'show'])->name('capa.show');
 
     // ---- Rekap & Narasi (admin, supervisor_k3) ----
     Route::middleware('role:admin,supervisor_k3')->prefix('rekap')->name('rekap.')->group(function () {

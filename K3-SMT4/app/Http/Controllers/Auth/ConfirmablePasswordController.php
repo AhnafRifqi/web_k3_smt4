@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class ConfirmablePasswordController extends Controller
 {
@@ -21,7 +22,7 @@ class ConfirmablePasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        if (!hash_equals(hash('sha256', $request->password), $request->user()->getAuthPassword())) {
+        if (!Hash::check($request->password, $request->user()->password)) {
             return back()->withErrors([
                 'password' => __('auth.password'),
             ]);

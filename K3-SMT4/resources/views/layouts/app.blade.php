@@ -38,7 +38,7 @@
                 </li>
 
                 {{-- Karyawan --}}
-                @can('admin,supervisor_k3')
+                @if(auth()->user()->canManage())
                 <li>
                     <a href="{{ route('employees.index') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -47,7 +47,7 @@
                         Karyawan
                     </a>
                 </li>
-                @endcan
+                @endif
 
                 {{-- SOP --}}
                 <li>

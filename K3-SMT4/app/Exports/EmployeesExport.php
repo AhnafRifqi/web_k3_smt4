@@ -31,12 +31,13 @@ class EmployeesExport implements FromQuery, WithHeadings, WithMapping, WithStyle
         return ['No', 'NIK', 'Nama', 'Jabatan', 'Departemen', 'Email', 'No. HP', 'Tgl Masuk', 'Status'];
     }
 
+    private int $rowNumber = 0;
+
     public function map($employee): array
     {
-        static $no = 0;
-        $no++;
+        $this->rowNumber++;
         return [
-            $no,
+            $this->rowNumber,
             $employee->nik,
             $employee->name,
             $employee->position,

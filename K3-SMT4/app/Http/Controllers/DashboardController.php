@@ -21,12 +21,22 @@ class DashboardController extends Controller
             'total_sops'       => Sop::where('status', 'aktif')->count(),
             'total_audits'     => Audit::count(),
             'total_findings'   => AuditFinding::count(),
-            'open_findings'    => AuditFinding::where('status', 'open')->count(),
-            'closed_findings'  => AuditFinding::where('status', 'closed')->count(),
-            'open_capa'        => Capa::where('status', 'open')->count(),
-            'closed_capa'      => Capa::where('status', 'closed')->count(),
-            'overdue_capa'     => Capa::where('status', '!=', 'closed')->where('target_date', '<', now())->count(),
         ];
+
+        $findingStats = AuditFinding::selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $stats['open_findings']   = $findingStats['open'] ?? 0;
+        $stats['closed_findings'] = $findingStats['closed'] ?? 0;
+
+        $capaStats = Capa::selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $stats['open_capa']   = $capaStats['open'] ?? 0;
+        $stats['closed_capa'] = $capaStats['closed'] ?? 0;
+        $stats['overdue_capa'] = Capa::where('status', '!=', 'closed')->where('target_date', '<', now())->count();
 
         // SOP Compliance this month
         $thisMonth = Carbon::now();

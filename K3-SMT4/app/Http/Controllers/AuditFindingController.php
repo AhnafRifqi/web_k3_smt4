@@ -22,7 +22,8 @@ class AuditFindingController extends Controller
     public function create()
     {
         $audits = Audit::where('status', '!=', 'cancelled')->latest()->get();
-        return view('audit-findings.create', compact('audits'));
+        $selectedAuditId = request('audit_id');
+        return view('audit-findings.create', compact('audits', 'selectedAuditId'));
     }
 
     public function store(Request $request)
@@ -41,6 +42,12 @@ class AuditFindingController extends Controller
         return redirect()->route('audits.show', $data['audit_id'])->with('success', 'Temuan berhasil ditambahkan.');
     }
 
+    public function show(AuditFinding $auditFinding)
+    {
+        $auditFinding->load('audit', 'capa');
+        return view('audit-findings.show', compact('auditFinding'));
+    }
+
     public function edit(AuditFinding $auditFinding)
     {
         $audits = Audit::latest()->get();
@@ -57,6 +64,7 @@ class AuditFindingController extends Controller
             'recommendation' => 'nullable',
             'status'         => 'required|in:open,in_progress,closed',
         ]);
+
         $auditFinding->update($data);
         return redirect()->route('audits.show', $auditFinding->audit_id)->with('success', 'Temuan diperbarui.');
     }

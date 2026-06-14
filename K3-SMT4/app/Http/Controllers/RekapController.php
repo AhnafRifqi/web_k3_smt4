@@ -61,7 +61,7 @@ class RekapController extends Controller
             $view = 'rekap.pdf-bulanan';
         }
 
-        $pdf = Pdf::loadView($view, compact('data'))->setPaper('a4');
+        $pdf = Pdf::loadView($view, compact('data', 'type'))->setPaper('a4');
         return $pdf->download("rekap-k3-{$type}-" . now()->format('Ymd') . '.pdf');
     }
 }
