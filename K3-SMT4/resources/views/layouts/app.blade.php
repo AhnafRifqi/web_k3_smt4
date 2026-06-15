@@ -5,12 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — SMK3 JNE</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' } // Sinkronisasi Dark Mode
+    </script>
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body class="h-full bg-gray-50 dark:bg-gray-900 font-sans antialiased">
 
-    <!-- ======================== SIDEBAR ======================== -->
     <aside id="sidebar"
         class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
@@ -38,7 +45,7 @@
                 </li>
 
                 {{-- Karyawan --}}
-                @if(auth()->user()->canManage())
+                @if(auth()->check() && auth()->user()->canManage())
                 <li>
                     <a href="{{ route('employees.index') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -100,7 +107,7 @@
                             {{ request()->routeIs('capa.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         CAPA
-                        @php $openCapa = \App\Models\Capa::where('status', 'open')->count(); @endphp
+                        @php $openCapa = class_exists('\App\Models\Capa') ? \App\Models\Capa::where('status', 'open')->count() : 0; @endphp
                         @if($openCapa > 0)
                         <span class="ml-auto bg-red-100 text-red-700 text-xs font-medium px-2 py-0.5 rounded-full dark:bg-red-900/40 dark:text-red-400">{{ $openCapa }}</span>
                         @endif
@@ -112,7 +119,7 @@
                 </li>
 
                 {{-- Rekap --}}
-                @if(in_array(auth()->user()->role, ['admin', 'supervisor_k3']))
+                @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'supervisor_k3']))
                 <li>
                     <a href="{{ route('rekap.index') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -123,7 +130,7 @@
                 </li>
                 @endif
 
-                @if(auth()->user()->isAdmin())
+                @if(auth()->check() && auth()->user()->isAdmin())
                 <li class="pt-3 pb-1">
                     <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-500">Pengaturan</p>
                 </li>
@@ -149,46 +156,39 @@
         </div>
     </aside>
 
-    <!-- ======================== MAIN CONTENT ======================== -->
     <div class="lg:ml-64">
 
-        <!-- TOPBAR -->
         <nav class="fixed top-0 right-0 left-0 lg:left-64 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 dark:bg-gray-800/95 dark:border-gray-700 h-14 flex items-center px-4 gap-3">
 
-            <!-- Mobile hamburger -->
             <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
 
-            <!-- Page title -->
             <div class="flex-1 min-w-0">
                 <h1 class="text-sm font-semibold text-gray-900 dark:text-white truncate">@yield('page-title', 'Dashboard')</h1>
                 <p class="text-xs text-gray-500 dark:text-gray-400 truncate">@yield('page-subtitle', 'PT Jalur Nugraha Ekakurir')</p>
             </div>
 
-            <!-- Right actions -->
             <div class="flex items-center gap-2 ml-auto">
 
-                <!-- Dark mode toggle -->
                 <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)"
                     class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
                     <svg x-show="!darkMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                    <svg x-show="darkMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    <svg x-show="darkMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 </button>
 
-                <!-- User dropdown -->
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open = !open" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <div class="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                            {{ auth()->check() ? strtoupper(substr(auth()->user()->name, 0, 1)) : 'A' }}
                         </div>
                         <div class="hidden sm:block text-left">
-                            <p class="text-xs font-medium text-gray-900 dark:text-white leading-tight">{{ auth()->user()->name }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ auth()->user()->role_label }}</p>
+                            <p class="text-xs font-medium text-gray-900 dark:text-white leading-tight">{{ auth()->check() ? auth()->user()->name : 'Admin' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ auth()->check() ? (auth()->user()->role_label ?? 'Administrator') : 'Administrator' }}</p>
                         </div>
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div x-show="open" @click.outside="open = false" x-transition
+                    <div x-show="open" @click.outside="open = false" x-transition style="display: none;"
                         class="absolute right-0 top-10 w-44 bg-white rounded-xl shadow-lg border border-gray-100 dark:bg-gray-700 dark:border-gray-600 py-1 z-50">
                         <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-600">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
@@ -207,11 +207,9 @@
             </div>
         </nav>
 
-        <!-- Sidebar overlay (mobile) -->
-        <div x-show="sidebarOpen" @click="sidebarOpen = false"
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" style="display: none;"
             class="fixed inset-0 z-30 bg-gray-900/50 lg:hidden" x-transition.opacity></div>
 
-        <!-- Page Content -->
         <main class="pt-14 min-h-screen">
             <div class="px-4 sm:px-6 py-6">
 
