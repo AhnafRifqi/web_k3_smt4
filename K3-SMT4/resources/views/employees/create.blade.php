@@ -1,13 +1,30 @@
 @extends('layouts.app')
 @section('title', isset($employee) ? 'Edit Karyawan' : 'Tambah Karyawan')
 @section('page-title', isset($employee) ? 'Edit Karyawan' : 'Tambah Karyawan Baru')
+@section('page-subtitle', 'Lengkapi data karyawan untuk melanjutkan')
 
 @section('content')
 <div class="max-w-2xl">
+    @if(session('success'))
+    <div class="mb-4 p-4 rounded-lg bg-green-50 text-green-800 border border-green-200">{{ session('success') }}</div>
+    @endif
+
+    @if(request('user_id'))
+    @php $approvedUser = \App\Models\User::find(request('user_id')); @endphp
+    @if($approvedUser)
+    <div class="mb-4 p-4 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 text-sm flex items-center gap-3">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>User <strong>{{ $approvedUser->name }}</strong> telah disetujui. Silakan lengkapi data karyawan untuk user ini.</span>
+    </div>
+    @endif
+    @endif
+
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
         <form method="POST" action="{{ isset($employee) ? route('employees.update', $employee) : route('employees.store') }}" enctype="multipart/form-data">
             @csrf
             @if(isset($employee)) @method('PUT') @endif
+
+            <input type="hidden" name="user_id" value="{{ old('user_id', request('user_id')) }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -19,7 +36,7 @@
 
                 <div>
                     <label class="form-label">Nama Lengkap <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $employee->name ?? '') }}" class="form-input" required>
+                    <input type="text" name="name" value="{{ old('name', $employee->name ?? ($approvedUser->name ?? '')) }}" class="form-input" required>
                     @error('name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
@@ -42,7 +59,7 @@
 
                 <div>
                     <label class="form-label">Email</label>
-                    <input type="email" name="email" value="{{ old('email', $employee->email ?? '') }}" class="form-input">
+                    <input type="email" name="email" value="{{ old('email', $employee->email ?? ($approvedUser->email ?? '')) }}" class="form-input">
                 </div>
 
                 <div>
@@ -52,7 +69,7 @@
 
                 <div>
                     <label class="form-label">Tanggal Masuk <span class="text-red-500">*</span></label>
-                    <input type="date" name="join_date" value="{{ old('join_date', isset($employee) ? $employee->join_date->format('Y-m-d') : '') }}" class="form-input" required>
+                    <input type="date" name="join_date" value="{{ old('join_date', isset($employee) ? $employee->join_date->format('Y-m-d') : date('Y-m-d')) }}" class="form-input" required>
                 </div>
 
                 <div>
@@ -78,6 +95,13 @@
                 </div>
 
             </div>
+
+            @if(request('user_id'))
+            <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 flex items-start gap-2">
+                <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Data akan dikaitkan dengan user yang telah disetujui. Pastikan nama dan email sesuai dengan data user.</span>
+            </div>
+            @endif
 
             <div class="flex items-center justify-end gap-3 mt-6 pt-5 border-t border-gray-100 dark:border-gray-700">
                 <a href="{{ route('employees.index') }}" class="btn-secondary">Batal</a>

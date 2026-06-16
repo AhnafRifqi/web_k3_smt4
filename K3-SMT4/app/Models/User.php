@@ -31,6 +31,8 @@ class User extends Authenticatable
     public function isSupervisorK3(): bool { return $this->role === 'supervisor_k3'; }
     public function isAuditor(): bool { return $this->role === 'auditor'; }
     public function isKaryawan(): bool { return $this->role === 'karyawan'; }
+    public function isPending(): bool { return $this->role === 'pending'; }
+    public function isValidated(): bool { return $this->is_validated === true && $this->role !== 'pending'; }
     public function canManage(): bool { return in_array($this->role, ['admin', 'supervisor_k3']); }
 
     public function getRoleLabelAttribute(): string
@@ -40,8 +42,17 @@ class User extends Authenticatable
             'supervisor_k3' => 'Supervisor K3',
             'auditor' => 'Auditor',
             'karyawan' => 'Karyawan',
+            'pending' => 'Pending',
             default => 'Unknown',
         };
+    }
+
+    /**
+     * Cek apakah user adalah admin yang tidak bisa dimodifikasi
+     */
+    public function isImmutableAdmin(): bool
+    {
+        return $this->role === 'admin' && $this->id === 1;
     }
 
     // Relationships
