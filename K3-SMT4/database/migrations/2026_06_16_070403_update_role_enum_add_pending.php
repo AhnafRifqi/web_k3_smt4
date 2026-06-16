@@ -9,12 +9,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // MySQL requires raw query to modify ENUM values
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'supervisor_k3', 'auditor', 'karyawan', 'pending') DEFAULT 'pending'");
+        // PostgreSQL: drop existing CHECK constraint on role column, add updated one with 'pending'
+        DB::statement("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check");
+        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin', 'supervisor_k3', 'auditor', 'karyawan', 'pending'))");
+        DB::statement("ALTER TABLE users ALTER COLUMN role SET DEFAULT 'pending'");
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'supervisor_k3', 'auditor', 'karyawan') DEFAULT 'karyawan'");
+        // Revert: remove 'pending' from allowed values
+        DB::statement("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check");
+        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin', 'supervisor_k3', 'auditor', 'karyawan'))");
+        DB::statement("ALTER TABLE users ALTER COLUMN role SET DEFAULT 'karyawan'");
     }
 };
