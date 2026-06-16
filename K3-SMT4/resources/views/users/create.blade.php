@@ -74,10 +74,13 @@
                     </div>
                     <select name="role" required
                         class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 pl-11 pr-10 py-3 text-gray-900 dark:text-slate-100 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer">
-                        <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-                        <option value="supervisor_k3" {{ old('role') == 'supervisor_k3' ? 'selected' : '' }}>Supervisor K3</option>
+                        <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>System Administrator</option>
+                        <option value="k3_manager" {{ old('role') == 'k3_manager' ? 'selected' : '' }}>K3 Manager</option>
+                        <option value="k3_officer" {{ old('role') == 'k3_officer' ? 'selected' : '' }}>K3 Officer</option>
+                        <option value="dept_head" {{ old('role') == 'dept_head' ? 'selected' : '' }}>Department Head</option>
+                        <option value="employee" {{ old('role') == 'employee' ? 'selected' : '' }}>Employee / Inspector</option>
                         <option value="auditor" {{ old('role') == 'auditor' ? 'selected' : '' }}>Auditor</option>
-                        <option value="karyawan" {{ old('role') == 'karyawan' ? 'selected' : '' }}>Karyawan</option>
+                        <option value="viewer" {{ old('role') == 'viewer' ? 'selected' : '' }}>Viewer</option>
                     </select>
                     <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
