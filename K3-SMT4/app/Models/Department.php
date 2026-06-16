@@ -10,12 +10,17 @@ class Department extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'code', 'description', 'is_active'];
+    protected $fillable = ['name', 'code', 'description', 'is_active', 'division_id'];
     protected $casts = ['is_active' => 'boolean'];
 
     public function scopeActive($query)
     {
         return $query->whereRaw('is_active IS TRUE');
+    }
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
     }
 
     public function employees()

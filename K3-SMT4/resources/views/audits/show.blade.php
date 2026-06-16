@@ -136,6 +136,72 @@
                 @endforelse
             </div>
         </div>
+
+        {{-- Checklist --}}
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-50 dark:border-gray-700">
+                <h3 class="font-semibold text-gray-900 dark:text-white text-sm">
+                    Checklist Audit
+                    <span class="ml-1 text-xs text-gray-400 font-normal">({{ $audit->checklistItems->count() }})</span>
+                </h3>
+            </div>
+
+            @if(in_array(auth()->user()->role, ['super_admin', 'auditor', 'k3_manager']))
+            <div class="px-5 py-4 border-b border-gray-50 dark:border-gray-700 bg-gray-50 dark:bg-slate-900/30">
+                <form action="{{ route('audit-checklist.store', $audit) }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    @csrf
+                    <input type="text" name="item_number" placeholder="No. Item" required
+                        class="text-sm rounded-lg border border-gray-200 dark:border-slate-600 px-3 py-2 dark:bg-slate-800 dark:text-white">
+                    <input type="text" name="description" placeholder="Deskripsi item" required
+                        class="md:col-span-2 text-sm rounded-lg border border-gray-200 dark:border-slate-600 px-3 py-2 dark:bg-slate-800 dark:text-white">
+                    <button type="submit" class="text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 px-3 py-2">Tambah</button>
+                </form>
+            </div>
+            @endif
+
+            <div class="divide-y divide-gray-50 dark:divide-gray-700">
+                @forelse($audit->checklistItems as $item)
+                <div class="px-5 py-4">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-mono font-bold text-gray-500">{{ $item->item_number }}</span>
+                                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $item->conformance_status_color }}-100 text-{{ $item->conformance_status_color }}-700 dark:bg-{{ $item->conformance_status_color }}-900/30 dark:text-{{ $item->conformance_status_color }}-400">
+                                    {{ $item->conformance_status_label }}
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-700 dark:text-gray-300">{{ $item->description }}</p>
+                            @if($item->standard_ref)
+                            <p class="text-xs text-blue-500 mt-1">Ref: {{ $item->standard_ref }}</p>
+                            @endif
+                            @if($item->notes)
+                            <p class="text-xs text-gray-500 mt-1">{{ $item->notes }}</p>
+                            @endif
+                        </div>
+
+                        @if(in_array(auth()->user()->role, ['super_admin', 'auditor', 'k3_manager']))
+                        <form action="{{ route('audit-checklist.update', $item) }}" method="POST" class="flex items-center gap-2 shrink-0">
+                            @csrf @method('PATCH')
+                            <select name="conformance_status"
+                                class="text-xs rounded-lg border border-gray-200 dark:border-slate-600 px-2 py-1.5 dark:bg-slate-800 dark:text-white">
+                                <option value="not_assessed" {{ $item->conformance_status === 'not_assessed' ? 'selected' : '' }}>Not Assessed</option>
+                                <option value="conforming" {{ $item->conformance_status === 'conforming' ? 'selected' : '' }}>Conforming</option>
+                                <option value="minor_nc" {{ $item->conformance_status === 'minor_nc' ? 'selected' : '' }}>Minor NC</option>
+                                <option value="major_nc" {{ $item->conformance_status === 'major_nc' ? 'selected' : '' }}>Major NC</option>
+                                <option value="observation" {{ $item->conformance_status === 'observation' ? 'selected' : '' }}>Observation</option>
+                            </select>
+                            <button type="submit" class="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1.5">Update</button>
+                        </form>
+                        @endif
+                    </div>
+                </div>
+                @empty
+                <div class="px-5 py-10 text-center text-sm text-gray-400">
+                    Belum ada item checklist untuk audit ini.
+                </div>
+                @endforelse
+            </div>
+        </div>
     </div>
 
     {{-- RIGHT: Stats Sidebar --}}

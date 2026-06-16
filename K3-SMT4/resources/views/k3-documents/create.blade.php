@@ -111,16 +111,36 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">File PDF</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">File Dokumen</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <svg class="w-5 h-5 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                     </div>
-                    <input type="file" name="file" accept="application/pdf"
+                    <input type="file" name="file" accept=".pdf,.doc,.docx,.xlsx,.jpg,.jpeg,.png"
                         class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 pl-11 pr-4 py-3 text-gray-900 dark:text-slate-100 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-400 hover:file:bg-blue-100">
                 </div>
                 @error('file') <p class="text-xs text-red-500 mt-1.5 ml-1">{{ $message }}</p> @enderror
-                <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Maksimal 20 MB. Format PDF.</p>
+                <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">Maksimal 50 MB. Format: PDF, DOC, DOCX, XLSX, JPG, PNG.</p>
+            </div>
+
+            <div x-data="{ visibility: '{{ old('visibility', 'public') }}' }">
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Visibilitas</label>
+                <select name="visibility" x-model="visibility" required
+                    class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 px-4 py-3 text-gray-900 dark:text-slate-100 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <option value="public">Publik (semua role)</option>
+                    <option value="restricted">Terbatas (departemen tertentu)</option>
+                </select>
+
+                <div x-show="visibility === 'restricted'" class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Departemen yang Diizinkan</label>
+                    <select name="allowed_departments[]" multiple size="5"
+                        class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 px-4 py-3 text-gray-900 dark:text-slate-100 outline-none">
+                        @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}" {{ in_array($dept->id, old('allowed_departments', [])) ? 'selected' : '' }}>{{ $dept->name }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Tahan Ctrl/Cmd untuk memilih beberapa departemen.</p>
+                </div>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100 dark:border-slate-700">

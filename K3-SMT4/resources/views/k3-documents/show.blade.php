@@ -5,6 +5,13 @@
 @section('page-subtitle', 'Informasi lengkap dokumen K3')
 
 @section('content')
+@php
+    $fileExt = $k3Document->file_url
+        ? strtolower(pathinfo(parse_url($k3Document->file_url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION))
+        : null;
+    $isImage = in_array($fileExt, ['jpg', 'jpeg', 'png'], true);
+    $isPdf = $fileExt === 'pdf';
+@endphp
 <div class="space-y-5">
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -33,6 +40,10 @@
                     <p class="mt-1 text-gray-900 dark:text-white">{{ ucfirst($k3Document->status) }}</p>
                 </div>
                 <div>
+                    <h3 class="text-sm text-gray-500 dark:text-gray-400">Visibilitas</h3>
+                    <p class="mt-1 text-gray-900 dark:text-white">{{ $k3Document->visibility === 'restricted' ? 'Terbatas' : 'Publik' }}</p>
+                </div>
+                <div>
                     <h3 class="text-sm text-gray-500 dark:text-gray-400">Diupload oleh</h3>
                     <p class="mt-1 text-gray-900 dark:text-white">{{ $k3Document->uploader?->name ?? 'Unknown' }}</p>
                 </div>
@@ -44,10 +55,20 @@
                 </div>
                 @if($k3Document->file_url)
                 <div>
-                    <h3 class="text-sm text-gray-500 dark:text-gray-400">File</h3>
-                    <a href="{{ $k3Document->file_url }}" target="_blank" class="inline-flex items-center gap-2 text-blue-600 hover:underline">
-                        Buka PDF
-                    </a>
+                    <h3 class="text-sm text-gray-500 dark:text-gray-400 mb-2">File</h3>
+                    @if($isImage)
+                    <img src="{{ $k3Document->file_url }}" alt="{{ $k3Document->title }}" class="max-w-full max-h-64 rounded-lg border border-gray-200 dark:border-gray-700 object-contain">
+                    @endif
+                    <div class="flex flex-wrap gap-3 mt-2">
+                        @if($isPdf)
+                        <a href="{{ $k3Document->file_url }}" target="_blank" class="inline-flex items-center gap-2 text-blue-600 hover:underline font-medium">
+                            Lihat PDF
+                        </a>
+                        @endif
+                        <a href="{{ $k3Document->file_url }}" target="_blank" download class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
+                            Unduh File
+                        </a>
+                    </div>
                 </div>
                 @endif
             </div>

@@ -1,16 +1,19 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AuditChecklistController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuditFindingController;
 use App\Http\Controllers\CapaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\DivisionController;
 use App\Http\Controllers\DocumentApprovalController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HazardController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\K3DocumentController;
+use App\Http\Controllers\MonitoringFormController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RekapController;
@@ -71,6 +74,7 @@ Route::middleware(['auth'])->group(function () {
 
         // ---- User Management (super_admin only) ----
         Route::middleware('role:super_admin')->group(function () {
+            Route::resource('divisions', DivisionController::class)->except(['show']);
             Route::resource('departments', DepartmentController::class);
             Route::patch('/users/{user}/validate', [UserController::class, 'validateUser'])->name('users.validate');
             Route::patch('/users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
@@ -128,6 +132,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/audits/{audit}', [AuditController::class, 'show'])->name('audits.show');
         Route::get('/audits/{audit}/export-pdf', [AuditController::class, 'exportPdf'])->name('audits.export-pdf');
 
+        Route::middleware('role:super_admin,auditor,k3_manager')->group(function () {
+            Route::post('/audits/{audit}/checklist-items', [AuditChecklistController::class, 'store'])->name('audit-checklist.store');
+            Route::patch('/audit-checklist-items/{auditChecklistItem}', [AuditChecklistController::class, 'update'])->name('audit-checklist.update');
+            Route::delete('/audit-checklist-items/{auditChecklistItem}', [AuditChecklistController::class, 'destroy'])->name('audit-checklist.destroy');
+        });
+
         // ---- Evidence Package Export (GAP 7) ----
         Route::middleware('role:super_admin,auditor,k3_manager')->group(function () {
             Route::get('/audits/{audit}/evidence-package', [AuditController::class, 'exportEvidencePackage'])->name('audits.evidence-package');
@@ -155,6 +165,28 @@ Route::middleware(['auth'])->group(function () {
 
         // ---- HAZARDS / HIRARC (GAP 2) ----
         Route::resource('hazards', HazardController::class);
+
+        // ---- Form Monitoring (GAP 1) ----
+        Route::get('/monitoring-forms', [MonitoringFormController::class, 'index'])->name('monitoring-forms.index');
+
+        Route::middleware('role:super_admin,k3_manager,k3_officer')->group(function () {
+            Route::get('/monitoring-forms/create', [MonitoringFormController::class, 'create'])->name('monitoring-forms.create');
+            Route::post('/monitoring-forms', [MonitoringFormController::class, 'store'])->name('monitoring-forms.store');
+        });
+
+        Route::middleware('role:super_admin,k3_manager,k3_officer,dept_head,employee')->group(function () {
+            Route::get('/monitoring-forms/{monitoringForm}/fill/{assignment}', [MonitoringFormController::class, 'fill'])->name('monitoring-forms.fill');
+            Route::post('/monitoring-forms/{monitoringForm}/fill/{assignment}', [MonitoringFormController::class, 'submit'])->name('monitoring-forms.submit');
+        });
+
+        Route::get('/monitoring-forms/{monitoringForm}', [MonitoringFormController::class, 'show'])->name('monitoring-forms.show');
+
+        Route::middleware('role:super_admin,k3_manager,k3_officer')->group(function () {
+            Route::get('/monitoring-forms/{monitoringForm}/edit', [MonitoringFormController::class, 'edit'])->name('monitoring-forms.edit');
+            Route::put('/monitoring-forms/{monitoringForm}', [MonitoringFormController::class, 'update'])->name('monitoring-forms.update');
+            Route::delete('/monitoring-forms/{monitoringForm}', [MonitoringFormController::class, 'destroy'])->name('monitoring-forms.destroy');
+            Route::post('/monitoring-forms/{monitoringForm}/assign', [MonitoringFormController::class, 'assign'])->name('monitoring-forms.assign');
+        });
 
         // ---- ACTIVITY LOGS (GAP 4) ----
         Route::middleware('role:super_admin,k3_manager,auditor')->group(function () {
