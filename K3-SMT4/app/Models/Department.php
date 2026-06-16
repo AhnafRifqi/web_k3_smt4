@@ -13,6 +13,11 @@ class Department extends Model
     protected $fillable = ['name', 'code', 'description', 'is_active'];
     protected $casts = ['is_active' => 'boolean'];
 
+    public function scopeActive($query)
+    {
+        return $query->whereRaw('is_active IS TRUE');
+    }
+
     public function employees()
     {
         return $this->hasMany(Employee::class);

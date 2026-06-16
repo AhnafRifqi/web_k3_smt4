@@ -30,14 +30,14 @@ class EmployeeController extends Controller
         }
 
         $employees   = $query->latest()->paginate(15)->withQueryString();
-        $departments = Department::where('is_active', true)->get();
+        $departments = Department::active()->get();
 
         return view('employees.index', compact('employees', 'departments'));
     }
 
     public function create()
     {
-        $departments = Department::where('is_active', true)->get();
+        $departments = Department::active()->get();
         return view('employees.create', compact('departments'));
     }
 
@@ -75,7 +75,7 @@ class EmployeeController extends Controller
 
     public function edit(Employee $employee)
     {
-        $departments = Department::where('is_active', true)->get();
+        $departments = Department::active()->get();
         return view('employees.edit', compact('employee', 'departments'));
     }
 
