@@ -35,13 +35,15 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'pending',
-            'is_validated' => false,
-        ]);
+        // Jalur pencarian biasanya: app/Http/Controllers/Auth/RegisteredUserController.php
+
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'role' => 'viewer', // <-- Ubah dari 'pending' menjadi 'viewer'
+        'is_validated' => 0, // Biarkan ini tetap 0 agar statusnya tetap perlu divalidasi admin
+    ]);
 
         event(new Registered($user));
 
