@@ -17,9 +17,8 @@ class EmployeeController extends Controller
         $tab = $request->tab ?? 'active';
 
         if ($tab === 'pending') {
-            // Ambil user yang masih pending
-            $pendingUsers = User::where('role', 'pending')
-                ->where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
+            // Ambil semua user yang belum divalidasi (termasuk karyawan dengan is_validated=false)
+            $pendingUsers = User::where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
                 ->latest()
                 ->paginate(15, ['*'], 'page')
                 ->withQueryString();
@@ -49,9 +48,8 @@ class EmployeeController extends Controller
         $employees   = $query->latest()->paginate(15)->withQueryString();
         $departments = Department::active()->get();
 
-        // Ambil pending users untuk tab
-        $pendingUsers = User::where('role', 'pending')
-            ->where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
+        // Ambil semua user yang belum divalidasi (untuk tab pending)
+        $pendingUsers = User::where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
             ->latest()
             ->paginate(15, ['*'], 'page_pending')
             ->withQueryString();
@@ -64,15 +62,16 @@ class EmployeeController extends Controller
      */
     public function approvePending(Request $request, User $user)
     {
-        if ($user->role !== 'pending') {
-            return back()->with('error', 'User ini bukan dalam status pending.');
+        // Jika role masih 'pending', ubah menjadi karyawan
+        if ($user->role === 'pending') {
+            $user->update([
+                'role' => 'karyawan',
+                'is_validated' => true,
+            ]);
+        } else {
+            // Jika sudah punya role lain, cukup validasi
+            $user->update(['is_validated' => true]);
         }
-
-        // Update user menjadi karyawan
-        $user->update([
-            'role' => 'karyawan',
-            'is_validated' => true,
-        ]);
 
         return redirect()->route('employees.create', ['user_id' => $user->id])
             ->with('success', 'User ' . $user->name . ' berhasil disetujui. Silakan lengkapi data karyawan.');
