@@ -202,6 +202,67 @@
     </div>
 </div>
 
+{{-- Form Completion Heatmap --}}
+<div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm mb-6">
+    <div class="mb-6">
+        <h3 class="font-bold text-slate-900 dark:text-white text-base">Heatmap Penyelesaian Form Monitoring</h3>
+        <p class="text-sm text-slate-500 mt-1">Tingkat submit form per departemen (6 bulan terakhir)</p>
+    </div>
+
+    @if(!empty($heatmapData['rows']))
+    <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+            <thead>
+                <tr>
+                    <th class="text-left py-2 pr-4 font-semibold text-slate-500 min-w-[140px]">Departemen</th>
+                    @foreach($heatmapData['months'] as $monthLabel)
+                    <th class="text-center py-2 px-1 font-semibold text-slate-500 min-w-[72px]">{{ $monthLabel }}</th>
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($heatmapData['rows'] as $row)
+                <tr class="border-t border-slate-100 dark:border-slate-700/50">
+                    <td class="py-2 pr-4 font-medium text-slate-700 dark:text-slate-300">{{ $row['department'] }}</td>
+                    @foreach($row['cells'] as $cell)
+                    @php
+                        $bgClass = match($cell['color']) {
+                            'green' => 'bg-green-500',
+                            'yellow' => 'bg-yellow-400',
+                            'red' => 'bg-red-500',
+                            default => 'bg-gray-300 dark:bg-gray-600',
+                        };
+                        $title = $cell['color'] === 'gray'
+                            ? 'Tidak ada form ditugaskan'
+                            : ($cell['submitted'] . '/' . $cell['assigned'] . ' (' . $cell['rate'] . '%)');
+                    @endphp
+                    <td class="py-2 px-1 text-center">
+                        <div class="mx-auto w-10 h-10 rounded-lg {{ $bgClass }} flex items-center justify-center text-white font-bold text-[10px] shadow-sm"
+                            title="{{ $title }}">
+                            @if($cell['rate'] !== null)
+                            {{ $cell['rate'] }}%
+                            @else
+                            —
+                            @endif
+                        </div>
+                    </td>
+                    @endforeach
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    <div class="flex flex-wrap gap-4 mt-4 text-xs text-slate-500">
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-green-500 inline-block"></span> 100%</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-yellow-400 inline-block"></span> 50–99%</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-500 inline-block"></span> &lt;50%</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-gray-300 dark:bg-gray-600 inline-block"></span> Tidak ada penugasan</span>
+    </div>
+    @else
+    <p class="text-sm text-slate-400 text-center py-8">Belum ada data heatmap form monitoring.</p>
+    @endif
+</div>
+
 {{-- Bottom Row --}}
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col">

@@ -2,12 +2,20 @@
 
 namespace App\Services;
 
+use App\Mail\K3Notification;
 use App\Models\Notification;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class NotificationService
 {
+    private const EMAIL_TYPES = [
+        'document.submitted',
+        'incident.reported',
+        'capa.overdue',
+    ];
+
     /**
      * Send notification to a single user.
      */
@@ -19,7 +27,7 @@ class NotificationService
         ?string $link = null,
         array $data = []
     ): Notification {
-        return Notification::create([
+        $notification = Notification::create([
             'id'      => Str::uuid(),
             'user_id' => $user->id,
             'type'    => $type,
@@ -28,6 +36,12 @@ class NotificationService
             'link'    => $link,
             'data'    => !empty($data) ? $data : null,
         ]);
+
+        if (in_array($type, self::EMAIL_TYPES, true) && $user->email) {
+            Mail::to($user->email)->queue(new K3Notification($title, $message, $link));
+        }
+
+        return $notification;
     }
 
     /**

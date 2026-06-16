@@ -52,6 +52,19 @@
                 @error('description') <p class="text-xs text-red-500 mt-1.5 ml-1">{{ $message }}</p> @enderror
             </div>
 
+            {{-- Divisi --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Divisi (Opsional)</label>
+                <select name="division_id"
+                    class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 px-4 py-3 text-gray-900 dark:text-slate-100 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <option value="">— Tanpa Divisi —</option>
+                    @foreach($divisions as $division)
+                    <option value="{{ $division->id }}" {{ old('division_id') == $division->id ? 'selected' : '' }}>{{ $division->name }}</option>
+                    @endforeach
+                </select>
+                @error('division_id') <p class="text-xs text-red-500 mt-1.5 ml-1">{{ $message }}</p> @enderror
+            </div>
+
             {{-- Actions --}}
             <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100 dark:border-slate-700">
                 <a href="{{ route('departments.index') }}"

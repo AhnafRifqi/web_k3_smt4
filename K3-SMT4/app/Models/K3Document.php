@@ -15,6 +15,7 @@ class K3Document extends Model
     protected $fillable = [
         'title', 'category', 'document_number', 'revision', 'version',
         'effective_date', 'file_url', 'description', 'status', 'workflow_status',
+        'visibility', 'allowed_departments',
         'uploaded_by', 'submitted_by', 'reviewed_by', 'approved_by',
         'submitted_at', 'reviewed_at', 'approved_at', 'review_due_date',
         'parent_document_id',
@@ -26,6 +27,7 @@ class K3Document extends Model
         'submitted_at' => 'datetime',
         'reviewed_at' => 'datetime',
         'approved_at' => 'datetime',
+        'allowed_departments' => 'array',
     ];
 
     // Relationships

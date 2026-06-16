@@ -53,7 +53,7 @@ class AuditController extends Controller
 
     public function show(Audit $audit)
     {
-        $audit->load(['findings.capa', 'capas.pic', 'creator']);
+        $audit->load(['findings.capa', 'capas.pic', 'creator', 'checklistItems']);
         return view('audits.show', compact('audit'));
     }
 

@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Audit;
 use App\Models\AuditFinding;
 use App\Models\Capa;
+use App\Models\Department;
 use App\Models\Employee;
+use App\Models\FormAssignment;
+use App\Models\FormSubmission;
 use App\Models\Incident;
 use App\Models\K3Document;
 use App\Models\Sop;
@@ -18,6 +21,12 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+
+        if ($user->isEmployee()) {
+            return redirect()->route('my-employee')
+                ->with('info', 'Sebagai karyawan, silakan akses profil Anda.');
+        }
+
         $departmentId = $request->department_id;
         $dateFrom = $request->date_from;
         $dateTo = $request->date_to;
@@ -96,8 +105,11 @@ class DashboardController extends Controller
             ->whereDate('review_due_date', '<=', now()->addDays(30))
             ->count();
 
-        // Overdue forms placeholder
-        $stats['overdue_forms'] = 0;
+        // Overdue form assignments
+        $stats['overdue_forms'] = FormAssignment::whereNotNull('due_date')
+            ->where('due_date', '<', now())
+            ->whereDoesntHave('submissions', fn ($q) => $q->where('status', 'submitted'))
+            ->count();
 
         // SOP Compliance this month
         $thisMonth = Carbon::now();
@@ -179,14 +191,74 @@ class DashboardController extends Controller
             ->take(5)->get();
 
         // Departments for filter
-        $departments = \App\Models\Department::orderBy('name')->get();
+        $departments = Department::orderBy('name')->get();
+
+        // Form completion heatmap (last 6 months)
+        $heatmapData = $this->buildHeatmapData($departmentId);
 
         return view('dashboard', compact(
             'stats', 'monthlyCompliance', 'findingsBySeverity',
             'capaByStatus', 'recentAudits', 'overdueCapa',
             'incidentChartData', 'incidentTypes', 'typeLabels',
             'recentIncidents', 'departments', 'departmentId',
-            'dateFrom', 'dateTo'
+            'dateFrom', 'dateTo', 'heatmapData'
         ));
+    }
+
+    private function buildHeatmapData(?int $departmentFilter = null): array
+    {
+        $months = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $months[] = Carbon::now()->subMonths($i);
+        }
+
+        $deptQuery = Department::orderBy('name');
+        if ($departmentFilter) {
+            $deptQuery->where('id', $departmentFilter);
+        }
+
+        $heatmapData = [
+            'months' => array_map(fn ($m) => $m->translatedFormat('M Y'), $months),
+            'rows' => [],
+        ];
+
+        foreach ($deptQuery->get() as $dept) {
+            $row = ['department' => $dept->name, 'cells' => []];
+
+            foreach ($months as $month) {
+                $assigned = FormAssignment::where('assigned_to_type', 'department')
+                    ->where('assigned_to_id', $dept->id)
+                    ->where('created_at', '<=', $month->copy()->endOfMonth())
+                    ->count();
+
+                $submitted = FormSubmission::where('department_id', $dept->id)
+                    ->where('status', 'submitted')
+                    ->whereYear('submitted_at', $month->year)
+                    ->whereMonth('submitted_at', $month->month)
+                    ->count();
+
+                if ($assigned === 0) {
+                    $row['cells'][] = [
+                        'color' => 'gray',
+                        'rate' => null,
+                        'submitted' => $submitted,
+                        'assigned' => 0,
+                    ];
+                } else {
+                    $rate = min(100, (int) round(($submitted / $assigned) * 100));
+                    $color = $rate >= 100 ? 'green' : ($rate >= 50 ? 'yellow' : 'red');
+                    $row['cells'][] = [
+                        'color' => $color,
+                        'rate' => $rate,
+                        'submitted' => $submitted,
+                        'assigned' => $assigned,
+                    ];
+                }
+            }
+
+            $heatmapData['rows'][] = $row;
+        }
+
+        return $heatmapData;
     }
 }
