@@ -206,7 +206,7 @@
     </div>
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
         <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Belum Validasi</p>
-        <p class="text-xl font-bold text-rose-600 dark:text-rose-400 mt-1">{{ \App\Models\User::where('is_validated', false)->count() }}</p>
+        <p class="text-xl font-bold text-rose-600 dark:text-rose-400 mt-1">{{ \App\Models\User::where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))->count() }}</p>
     </div>
 </div>
 
