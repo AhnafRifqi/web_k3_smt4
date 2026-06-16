@@ -19,7 +19,7 @@ class EmployeeController extends Controller
         if ($tab === 'pending') {
             // Ambil user yang masih pending
             $pendingUsers = User::where('role', 'pending')
-                ->where('is_validated', false)
+                ->where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
                 ->latest()
                 ->paginate(15, ['*'], 'page')
                 ->withQueryString();
@@ -51,7 +51,7 @@ class EmployeeController extends Controller
 
         // Ambil pending users untuk tab
         $pendingUsers = User::where('role', 'pending')
-            ->where('is_validated', false)
+            ->where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
             ->latest()
             ->paginate(15, ['*'], 'page_pending')
             ->withQueryString();
