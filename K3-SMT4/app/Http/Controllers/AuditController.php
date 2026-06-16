@@ -94,4 +94,11 @@ class AuditController extends Controller
         $pdf = Pdf::loadView('audits.pdf', compact('audit'))->setPaper('a4');
         return $pdf->download("laporan-audit-{$audit->audit_number}.pdf");
     }
+
+    public function exportEvidencePackage(Audit $audit)
+    {
+        $audit->load(['findings', 'capas.pic', 'creator', 'documents']);
+        $pdf = Pdf::loadView('audits.evidence-package', compact('audit'))->setPaper('a4');
+        return $pdf->download("evidence-package-{$audit->audit_number}.pdf");
+    }
 }

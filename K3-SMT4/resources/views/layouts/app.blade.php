@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full" x-data="{ sidebarOpen: false, darkMode: localStorage.getItem('darkMode') === 'true' }" :class="{ 'dark': darkMode }">
+<html lang="id" class="h-full" x-data="{ sidebarOpen: false, darkMode: localStorage.getItem('darkMode') === 'true', notifOpen: false, notifCount: 0, notifs: [] }" :class="{ 'dark': darkMode }">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { darkMode: 'class' } // Sinkronisasi Dark Mode
+        tailwind.config = { darkMode: 'class' }
     </script>
     
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -44,8 +44,32 @@
                     </a>
                 </li>
 
+                {{-- Incidents --}}
+                <li>
+                    <a href="{{ route('incidents.index') }}"
+                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                            {{ request()->routeIs('incidents.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Incidents
+                        @php $openInc = class_exists('\App\Models\Incident') ? \App\Models\Incident::where('status', '!=', 'closed')->count() : 0; @endphp
+                        @if($openInc > 0)
+                        <span class="ml-auto bg-red-100 text-red-700 text-xs font-medium px-2 py-0.5 rounded-full dark:bg-red-900/40 dark:text-red-400">{{ $openInc }}</span>
+                        @endif
+                    </a>
+                </li>
+
+                {{-- HIRARC --}}
+                <li>
+                    <a href="{{ route('hazards.index') }}"
+                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                            {{ request()->routeIs('hazards.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        HIRARC
+                    </a>
+                </li>
+
                 {{-- Karyawan --}}
-                @if(auth()->check() && auth()->user()->canManage())
+                @if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))
                 <li>
                     <a href="{{ route('employees.index') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -57,7 +81,7 @@
                 @endif
 
                 {{-- Data Karyawan Saya --}}
-                @if(auth()->check() && auth()->user()->isKaryawan() && auth()->user()->is_validated)
+                @if(auth()->check() && in_array(auth()->user()->role, ['employee', 'dept_head']) && auth()->user()->is_validated)
                 <li>
                     <a href="{{ route('my-employee') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -67,6 +91,10 @@
                     </a>
                 </li>
                 @endif
+
+                <li class="pt-3 pb-1">
+                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-500">Dokumen & SOP</p>
+                </li>
 
                 {{-- SOP --}}
                 <li>
@@ -127,11 +155,11 @@
                 </li>
 
                 <li class="pt-3 pb-1">
-                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-500">Laporan</p>
+                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-500">Laporan & Logs</p>
                 </li>
 
                 {{-- Rekap --}}
-                @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'supervisor_k3']))
+                @if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))
                 <li>
                     <a href="{{ route('rekap.index') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -142,7 +170,19 @@
                 </li>
                 @endif
 
-                @if(auth()->check() && auth()->user()->isAdmin())
+                {{-- Activity Logs --}}
+                @if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'auditor']))
+                <li>
+                    <a href="{{ route('activity-logs.index') }}"
+                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                            {{ request()->routeIs('activity-logs.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                        Activity Logs
+                    </a>
+                </li>
+                @endif
+
+                @if(auth()->check() && auth()->user()->isSuperAdmin())
                 <li class="pt-3 pb-1">
                     <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-500">Pengaturan</p>
                 </li>
@@ -183,6 +223,52 @@
 
             <div class="flex items-center gap-2 ml-auto">
 
+                {{-- Notification Bell --}}
+                <div x-data="{ open: false }" class="relative"
+                    x-init="
+                        fetch('{{ route('notifications.unread-count') }}')
+                            .then(r => r.json())
+                            .then(d => { notifCount = d.count; });
+                        setInterval(() => {
+                            fetch('{{ route('notifications.unread-count') }}')
+                                .then(r => r.json())
+                                .then(d => { notifCount = d.count; });
+                        }, 30000);
+                    ">
+                    <button @click="open = !open; if(open) { fetch('{{ route('notifications.latest') }}').then(r => r.json()).then(d => { notifs = d.notifications; notifCount = d.unread_count; }); }"
+                        class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                        <template x-if="notifCount > 0">
+                            <span class="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm" x-text="notifCount"></span>
+                        </template>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-transition style="display: none;"
+                        class="absolute right-0 top-10 w-80 bg-white rounded-xl shadow-lg border border-gray-100 dark:bg-gray-700 dark:border-gray-600 py-1 z-50">
+                        <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-600 flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-700 dark:text-gray-200">Notifications</span>
+                            <a href="{{ route('notifications.index') }}" class="text-xs text-blue-600 hover:underline">View All</a>
+                        </div>
+                        <div class="max-h-60 overflow-y-auto">
+                            <template x-if="notifs.length === 0">
+                                <p class="text-xs text-gray-400 text-center py-4">No notifications</p>
+                            </template>
+                            <template x-for="n in notifs" :key="n.id">
+                                <a :href="n.link || '{{ route('notifications.index') }}'" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-50 dark:border-gray-600 last:border-0">
+                                    <div class="flex items-start gap-2">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-gray-900 dark:text-white truncate" x-text="n.title"></p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="n.message"></p>
+                                        </div>
+                                        <template x-if="!n.read_at">
+                                            <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1"></span>
+                                        </template>
+                                    </div>
+                                </a>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
                 <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)"
                     class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
                     <svg x-show="!darkMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
@@ -196,7 +282,7 @@
                         </div>
                         <div class="hidden sm:block text-left">
                             <p class="text-xs font-medium text-gray-900 dark:text-white leading-tight">{{ auth()->check() ? auth()->user()->name : 'Admin' }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ auth()->check() ? (auth()->user()->role_label ?? 'Administrator') : 'Administrator' }}</p>
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ auth()->check() ? (auth()->user()->role_label ?? 'Administrator') : 'Administrator' }}</p>
                         </div>
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>

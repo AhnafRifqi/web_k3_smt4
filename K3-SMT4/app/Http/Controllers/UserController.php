@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -28,12 +29,15 @@ class UserController extends Controller
             'name'     => 'required|max:100',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
-            'role'     => 'required|in:admin,supervisor_k3,auditor,karyawan',
+            'role'     => 'required|in:super_admin,k3_manager,k3_officer,dept_head,employee,auditor,viewer',
         ]);
         $data['password'] = Hash::make($data['password']);
-        $data['is_validated'] = true; // Auto-validate if created by admin
+        $data['is_validated'] = true;
         $data['is_active'] = true;
-        User::create($data);
+        $user = User::create($data);
+
+        ActivityLogService::log('user.created', 'users', "User {$user->name} created", $user, [], $user->toArray());
+
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan.');
     }
 
@@ -49,10 +53,13 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $oldRole = $user->role;
+        $oldActive = $user->is_active;
+
         // Proteksi: Admin utama (id=1) tidak bisa diubah role, dinonaktifkan, atau dihapus
         if ($user->isImmutableAdmin()) {
             $forbiddenChanges = [];
-            if ($request->role !== 'admin') {
+            if ($request->role !== 'super_admin') {
                 $forbiddenChanges[] = 'role';
             }
             if (!$request->boolean('is_active')) {
@@ -66,15 +73,15 @@ class UserController extends Controller
         $data = $request->validate([
             'name'         => 'required|max:100',
             'email'        => 'required|email|unique:users,email,' . $user->id,
-            'role'         => 'required|in:admin,supervisor_k3,auditor,karyawan,pending',
+            'role'         => 'required|in:super_admin,k3_manager,k3_officer,dept_head,employee,auditor,viewer',
             'is_active'    => 'boolean',
             'is_validated' => 'boolean',
             'password'     => 'nullable|min:8|confirmed',
         ]);
 
         // Proteksi: tidak bisa mengubah role admin sendiri ke non-admin
-        if ($user->id === auth()->id() && $user->role === 'admin' && $data['role'] !== 'admin') {
-            return back()->with('error', 'Anda tidak dapat mengubah role Anda sendiri dari Admin ke role lain.');
+        if ($user->id === auth()->id() && $user->role === 'super_admin' && $data['role'] !== 'super_admin') {
+            return back()->with('error', 'Anda tidak dapat mengubah role Anda sendiri dari Super Admin ke role lain.');
         }
 
         if (!empty($data['password'])) {
@@ -85,19 +92,23 @@ class UserController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['is_validated'] = $request->boolean('is_validated');
         $user->update($data);
+
+        // Log role changes
+        if ($oldRole !== $user->role) {
+            ActivityLogService::log('user.role_changed', 'users', "User {$user->name} role changed from {$oldRole} to {$user->role}", $user, ['role' => $oldRole], ['role' => $user->role]);
+        }
+        if ($oldActive !== $user->is_active) {
+            $action = $user->is_active ? 'user.activated' : 'user.deactivated';
+            ActivityLogService::log($action, 'users', "User {$user->name} " . ($user->is_active ? 'activated' : 'deactivated'), $user, ['is_active' => $oldActive], ['is_active' => $user->is_active]);
+        }
+
         return redirect()->route('users.index')->with('success', 'User berhasil diperbarui.');
     }
 
     public function validateUser(User $user)
     {
-        if ($user->role === 'pending') {
-            $user->update([
-                'role' => 'karyawan',
-                'is_validated' => true,
-            ]);
-        } else {
-            $user->update(['is_validated' => true]);
-        }
+        $user->update(['is_validated' => true]);
+        ActivityLogService::log('user.validated', 'users', "User {$user->name} validated", $user);
         return redirect()->route('users.index')->with('success', 'User ' . $user->name . ' berhasil divalidasi.');
     }
 
@@ -112,12 +123,10 @@ class UserController extends Controller
         }
 
         $user->delete();
+        ActivityLogService::log('user.deleted', 'users', "User {$user->name} deleted", $user);
         return redirect()->route('users.index')->with('success', 'User berhasil dihapus.');
     }
 
-    /**
-     * Toggle active/inactive user
-     */
     public function toggleActive(User $user)
     {
         if ($user->isImmutableAdmin()) {
@@ -128,15 +137,15 @@ class UserController extends Controller
             return back()->with('error', 'Anda tidak dapat menonaktifkan akun sendiri.');
         }
 
+        $oldActive = $user->is_active;
         $user->update(['is_active' => !$user->is_active]);
 
         $status = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        ActivityLogService::log($user->is_active ? 'user.activated' : 'user.deactivated', 'users', "User {$user->name} {$status}", $user, ['is_active' => $oldActive], ['is_active' => $user->is_active]);
+
         return back()->with('success', "User {$user->name} berhasil {$status}.");
     }
 
-    /**
-     * Reset password user
-     */
     public function resetPassword(Request $request, User $user)
     {
         $request->validate([
