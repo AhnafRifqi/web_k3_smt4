@@ -58,7 +58,17 @@ Route::middleware(['auth'])->group(function () {
     // ---- Departemen (admin) ----
     Route::middleware('role:admin')->group(function () {
         Route::resource('departments', DepartmentController::class);
+        Route::patch('/users/{user}/validate', [UserController::class, 'validateUser'])->name('users.validate');
         Route::resource('users', UserController::class);
+    });
+
+    // ---- Data Karyawan Mandiri (karyawan) ----
+    Route::middleware('role:karyawan')->group(function () {
+        Route::get('/my-employee', [EmployeeController::class, 'myEmployee'])->name('my-employee');
+        Route::get('/my-employee/create', [EmployeeController::class, 'createMyEmployee'])->name('my-employee.create');
+        Route::post('/my-employee', [EmployeeController::class, 'storeMyEmployee'])->name('my-employee.store');
+        Route::get('/my-employee/edit', [EmployeeController::class, 'editMyEmployee'])->name('my-employee.edit');
+        Route::put('/my-employee', [EmployeeController::class, 'updateMyEmployee'])->name('my-employee.update');
     });
 
     // ---- Dokumen K3 ----

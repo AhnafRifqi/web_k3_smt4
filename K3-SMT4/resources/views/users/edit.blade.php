@@ -35,7 +35,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="form-label">Peran</label>
                     <select name="role" class="form-input" required>
@@ -51,6 +51,13 @@
                     <select name="is_active" class="form-input">
                         <option value="1" {{ old('is_active', $user->is_active) ? 'selected' : '' }}>Aktif</option>
                         <option value="0" {{ !old('is_active', $user->is_active) ? 'selected' : '' }}>Nonaktif</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Status Validasi</label>
+                    <select name="is_validated" class="form-input">
+                        <option value="1" {{ old('is_validated', $user->is_validated) ? 'selected' : '' }}>Sudah Validasi</option>
+                        <option value="0" {{ !old('is_validated', $user->is_validated) ? 'selected' : '' }}>Belum Validasi</option>
                     </select>
                 </div>
             </div>
