@@ -46,6 +46,7 @@
                     <tr class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">User</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden sm:table-cell">Email</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">Role</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">Tanggal Daftar</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</th>
                         <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Aksi</th>
@@ -66,6 +67,11 @@
                         </td>
                         <td class="px-4 py-3 hidden sm:table-cell">
                             <span class="text-gray-600 dark:text-gray-400 text-xs">{{ $user->email }}</span>
+                        </td>
+                        <td class="px-4 py-3 hidden md:table-cell">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $user->role === 'pending' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' }}">
+                                {{ $user->role_label }}
+                            </span>
                         </td>
                         <td class="px-4 py-3 hidden md:table-cell">
                             <span class="text-gray-600 dark:text-gray-400 text-xs">{{ $user->created_at->format('d M Y H:i') }}</span>
@@ -102,7 +108,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-4 py-12 text-center">
+                        <td colspan="6" class="px-4 py-12 text-center">
                             <svg class="w-12 h-12 text-gray-200 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <p class="text-gray-500 dark:text-gray-400">Tidak ada user yang menunggu persetujuan</p>
                         </td>
@@ -256,8 +262,7 @@
             </table>
         </div>
 
-        @if($employees->hasPages())
-        <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
+        @if($employees->hasPages()) <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
             {{ $employees->links() }}
         </div>
         @endif
