@@ -28,6 +28,7 @@
                     <th class="px-4 py-3">Nama</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Peran</th>
+                    <th class="px-4 py-3">Validasi</th>
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3">Aksi</th>
                 </tr>
@@ -39,8 +40,34 @@
                     <td class="px-4 py-3">{{ $user->name }}</td>
                     <td class="px-4 py-3">{{ $user->email }}</td>
                     <td class="px-4 py-3">{{ ucfirst(str_replace('_', ' ', $user->role ?? 'user')) }}</td>
-                    <td class="px-4 py-3">{{ $user->is_active ? 'Aktif' : 'Nonaktif' }}</td>
+                    <td class="px-4 py-3">
+                        @if($user->role === 'karyawan')
+                            @if($user->is_validated)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
+                                    Sudah Validasi
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
+                                    Belum Validasi
+                                </span>
+                            @endif
+                        @else
+                            <span class="text-gray-400 dark:text-gray-500">-</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $user->is_active ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400' : 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400' }}">
+                            {{ $user->is_active ? 'Aktif' : 'Nonaktif' }}
+                        </span>
+                    </td>
                     <td class="px-4 py-3 space-x-2">
+                        @if($user->role === 'karyawan' && !$user->is_validated)
+                        <form action="{{ route('users.validate', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Validasi akun karyawan ini?');">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold">Validasi</button>
+                        </form>
+                        @endif
                         <a href="{{ route('users.edit', $user) }}" class="text-orange-600 hover:underline">Edit</a>
                         <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus pengguna ini?');">
                             @csrf

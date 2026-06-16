@@ -6,6 +6,40 @@
 
 @section('content')
 
+@if(auth()->check() && auth()->user()->isKaryawan())
+    @if(!auth()->user()->is_validated)
+    <div class="mb-6 p-5 bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-500/5 dark:to-orange-500/5 border border-amber-500/20 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm animate-pulse">
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-amber-800 dark:text-amber-300 text-sm md:text-base">Akun Belum Divalidasi</h3>
+                <p class="text-xs md:text-sm text-amber-700/80 dark:text-amber-400/80 mt-1">Akun karyawan Anda saat ini sedang menunggu persetujuan dari Admin. Fitur melengkapi data diri dan beberapa fitur lainnya akan aktif setelah akun Anda divalidasi.</p>
+            </div>
+        </div>
+    </div>
+    @elseif(!auth()->user()->employee)
+    <div class="mb-6 p-5 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-500/5 dark:to-indigo-500/5 border border-blue-500/20 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-blue-800 dark:text-blue-300 text-sm md:text-base">Lengkapi Data Karyawan Anda</h3>
+                <p class="text-xs md:text-sm text-blue-700/80 dark:text-blue-400/80 mt-1">Akun Anda berhasil divalidasi oleh Admin! Silakan lengkapi profil data karyawan Anda untuk mengaktifkan seluruh fitur sistem.</p>
+            </div>
+        </div>
+        <div class="shrink-0">
+            <a href="{{ route('my-employee.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 text-xs md:text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]">
+                Lengkapi Data Diri
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </div>
+    @endif
+@endif
+
 {{-- Stats Cards --}}
 <div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
 

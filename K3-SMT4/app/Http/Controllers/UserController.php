@@ -31,6 +31,7 @@ class UserController extends Controller
             'role'     => 'required|in:admin,supervisor_k3,auditor,karyawan',
         ]);
         $data['password'] = Hash::make($data['password']);
+        $data['is_validated'] = true; // Auto-validate if created by admin
         User::create($data);
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan.');
     }
@@ -45,11 +46,12 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $data = $request->validate([
-            'name'      => 'required|max:100',
-            'email'     => 'required|email|unique:users,email,' . $user->id,
-            'role'      => 'required|in:admin,supervisor_k3,auditor,karyawan',
-            'is_active' => 'boolean',
-            'password'  => 'nullable|min:8|confirmed',
+            'name'         => 'required|max:100',
+            'email'        => 'required|email|unique:users,email,' . $user->id,
+            'role'         => 'required|in:admin,supervisor_k3,auditor,karyawan',
+            'is_active'    => 'boolean',
+            'is_validated' => 'boolean',
+            'password'     => 'nullable|min:8|confirmed',
         ]);
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
@@ -57,8 +59,15 @@ class UserController extends Controller
             unset($data['password']);
         }
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_validated'] = $request->boolean('is_validated');
         $user->update($data);
         return redirect()->route('users.index')->with('success', 'User berhasil diperbarui.');
+    }
+
+    public function validateUser(User $user)
+    {
+        $user->update(['is_validated' => true]);
+        return redirect()->route('users.index')->with('success', 'User ' . $user->name . ' berhasil divalidasi.');
     }
 
     public function destroy(User $user)
