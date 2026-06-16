@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\User;
 use App\Exports\EmployeesExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -13,6 +14,22 @@ class EmployeeController extends Controller
 {
     public function index(Request $request)
     {
+        $tab = $request->tab ?? 'active';
+
+        if ($tab === 'pending') {
+            // Ambil user yang masih pending
+            $pendingUsers = User::where('role', 'pending')
+                ->where('is_validated', false)
+                ->latest()
+                ->paginate(15, ['*'], 'page')
+                ->withQueryString();
+
+            $employees = collect(); // empty collection for active tab data
+            $departments = Department::active()->get();
+
+            return view('employees.index', compact('employees', 'departments', 'pendingUsers', 'tab'));
+        }
+
         $query = Employee::with('department');
 
         if ($request->search) {
@@ -32,13 +49,56 @@ class EmployeeController extends Controller
         $employees   = $query->latest()->paginate(15)->withQueryString();
         $departments = Department::active()->get();
 
-        return view('employees.index', compact('employees', 'departments'));
+        // Ambil pending users untuk tab
+        $pendingUsers = User::where('role', 'pending')
+            ->where('is_validated', false)
+            ->latest()
+            ->paginate(15, ['*'], 'page_pending')
+            ->withQueryString();
+
+        return view('employees.index', compact('employees', 'departments', 'pendingUsers', 'tab'));
+    }
+
+    /**
+     * Approve pending user -> menjadi karyawan
+     */
+    public function approvePending(Request $request, User $user)
+    {
+        if ($user->role !== 'pending') {
+            return back()->with('error', 'User ini bukan dalam status pending.');
+        }
+
+        // Update user menjadi karyawan
+        $user->update([
+            'role' => 'karyawan',
+            'is_validated' => true,
+        ]);
+
+        return redirect()->route('employees.create', ['user_id' => $user->id])
+            ->with('success', 'User ' . $user->name . ' berhasil disetujui. Silakan lengkapi data karyawan.');
+    }
+
+    /**
+     * Reject pending user
+     */
+    public function rejectPending(Request $request, User $user)
+    {
+        if ($user->role !== 'pending') {
+            return back()->with('error', 'User ini bukan dalam status pending.');
+        }
+
+        $name = $user->name;
+        $user->delete();
+
+        return redirect()->route('employees.index', ['tab' => 'pending'])
+            ->with('success', 'User ' . $name . ' ditolak dan dihapus dari sistem.');
     }
 
     public function create()
     {
         $departments = Department::active()->get();
-        return view('employees.create', compact('departments'));
+        $pendingUsers = User::where('role', 'pending')->get();
+        return view('employees.create', compact('departments', 'pendingUsers'));
     }
 
     public function store(Request $request)
@@ -53,6 +113,7 @@ class EmployeeController extends Controller
             'join_date'     => 'required|date',
             'status'        => 'required|in:aktif,tidak_aktif,cuti,resign',
             'photo'         => 'nullable|image|max:2048',
+            'user_id'       => 'nullable|exists:users,id',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -63,7 +124,16 @@ class EmployeeController extends Controller
         }
         unset($data['photo']);
 
+        // Ensure email is set if user_id is provided
+        if ($request->user_id && empty($data['email'])) {
+            $user = User::find($request->user_id);
+            if ($user) {
+                $data['email'] = $user->email;
+            }
+        }
+
         Employee::create($data);
+
         return redirect()->route('employees.index')->with('success', 'Karyawan berhasil ditambahkan.');
     }
 

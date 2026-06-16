@@ -77,6 +77,13 @@
                             placeholder="nama@jne.co.id" required>
                     </div>
 
+                    <div class="rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4 text-sm text-amber-200 flex items-start gap-3">
+                        <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Setelah mendaftar, akun Anda akan masuk dalam antrian verifikasi oleh Admin. Anda akan mendapatkan akses penuh setelah disetujui.</span>
+                    </div>
+
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label class="block text-sm font-medium text-slate-300 mb-1.5">Kata Sandi</label>

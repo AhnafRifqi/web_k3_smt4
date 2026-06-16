@@ -21,6 +21,16 @@ class RoleMiddleware
             return redirect()->route('login')->with('error', 'Akun Anda telah dinonaktifkan.');
         }
 
+        // Jika user pending, redirect ke halaman verifikasi
+        if ($user->role === 'pending') {
+            return redirect()->route('verification.pending');
+        }
+
+        // Jika user belum divalidasi, redirect ke halaman verifikasi
+        if (!$user->is_validated) {
+            return redirect()->route('verification.pending');
+        }
+
         if (!in_array($user->role, $roles)) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
