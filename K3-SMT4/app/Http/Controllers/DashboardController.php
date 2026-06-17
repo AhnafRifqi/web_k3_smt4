@@ -34,8 +34,8 @@ class DashboardController extends Controller
             $departmentId = $user->employee->department_id;
         }
 
-        // Total Karyawan (semua status, tanpa filter department)
-        $totalEmployees = Employee::count();
+        // Total Karyawan Aktif (tanpa filter department)
+        $totalEmployees = Employee::where('status', 'aktif')->count();
 
         // Open incidents (tanpa filter department untuk akurasi global)
         $openIncidents = Incident::where('status', '!=', 'closed')->count();
@@ -219,7 +219,7 @@ class DashboardController extends Controller
 
         // Stats
         $stats = [
-            'total_employees'  => $empQuery->count(),
+            'total_employees'  => $empQuery->where('status', 'aktif')->count(),
             'total_sops'       => $sopQuery->count(),
             'total_audits'     => $auditQuery->count(),
             'total_findings'   => $findingQuery->count(),
