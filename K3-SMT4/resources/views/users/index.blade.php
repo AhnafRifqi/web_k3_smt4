@@ -31,11 +31,13 @@
         </div>
         <select name="role" class="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500">
             <option value="">Semua Role</option>
-            <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
-            <option value="supervisor_k3" {{ request('role') === 'supervisor_k3' ? 'selected' : '' }}>Supervisor K3</option>
+            <option value="super_admin" {{ request('role') === 'super_admin' ? 'selected' : '' }}>System Administrator</option>
+            <option value="k3_manager" {{ request('role') === 'k3_manager' ? 'selected' : '' }}>K3 Manager</option>
+            <option value="k3_officer" {{ request('role') === 'k3_officer' ? 'selected' : '' }}>K3 Officer</option>
+            <option value="dept_head" {{ request('role') === 'dept_head' ? 'selected' : '' }}>Department Head</option>
+            <option value="employee" {{ request('role') === 'employee' ? 'selected' : '' }}>Employee / Inspector</option>
             <option value="auditor" {{ request('role') === 'auditor' ? 'selected' : '' }}>Auditor</option>
-            <option value="karyawan" {{ request('role') === 'karyawan' ? 'selected' : '' }}>Karyawan</option>
-            <option value="pending" {{ request('role') === 'pending' ? 'selected' : '' }}>Pending</option>
+            <option value="viewer" {{ request('role') === 'viewer' ? 'selected' : '' }}>Viewer</option>
         </select>
         <div class="flex gap-2">
             <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">Filter</button>
@@ -84,13 +86,15 @@
                     </td>
                     <td class="px-4 py-3">
                         @php
-                            $roleColors = [
-                                'admin' => 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-                                'supervisor_k3' => 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-                                'auditor' => 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-                                'karyawan' => 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                'pending' => 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-                            ];
+                             $roleColors = [
+                                 'super_admin' => 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+                                 'k3_manager' => 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                 'k3_officer' => 'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+                                 'dept_head' => 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+                                 'employee' => 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                 'auditor' => 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+                                 'viewer' => 'bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
+                             ];
                             $colorClass = $roleColors[$user->role] ?? 'bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
                         @endphp
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $colorClass }}">
@@ -98,11 +102,7 @@
                         </span>
                     </td>
                     <td class="px-4 py-3 hidden md:table-cell">
-                        @if($user->role === 'pending')
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
-                                Pending
-                            </span>
-                        @elseif($user->is_validated)
+                        @if($user->is_validated)
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
                                 Sudah
                             </span>
@@ -125,8 +125,8 @@
                     </td>
                     <td class="px-4 py-3">
                         <div class="flex items-center justify-end gap-1">
-                            @if(in_array($user->role, ['pending', 'karyawan']) && !$user->is_validated)
-                            <form action="{{ route('users.validate', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Validasi akun {{ $user->role === 'pending' ? 'pending' : 'karyawan' }} ini?')">
+                            @if($user->role === 'employee' && !$user->is_validated)
+                            <form action="{{ route('users.validate', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Validasi akun employee ini?')">
                                 @csrf
                                 @method('PATCH')
                                 <button type="submit" class="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg dark:hover:text-emerald-400 dark:hover:bg-emerald-900/20 transition-colors" title="Validasi">
@@ -158,7 +158,6 @@
                                 </button>
                             </form>
 
-                            @if($user->role !== 'admin')
                             <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus pengguna {{ $user->name }}?')">
                                 @csrf
                                 @method('DELETE')
@@ -166,7 +165,6 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                 </button>
                             </form>
-                            @endif
                             @endif
                         </div>
                     </td>
@@ -197,12 +195,12 @@
         <p class="text-xl font-bold text-gray-900 dark:text-white mt-1">{{ $users->total() }}</p>
     </div>
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
-        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Admin</p>
-        <p class="text-xl font-bold text-purple-600 dark:text-purple-400 mt-1">{{ \App\Models\User::where('role', 'admin')->count() }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Super Admin</p>
+        <p class="text-xl font-bold text-purple-600 dark:text-purple-400 mt-1">{{ \App\Models\User::where('role', 'super_admin')->count() }}</p>
     </div>
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
-        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pending</p>
-        <p class="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">{{ \App\Models\User::where('role', 'pending')->count() }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Employee</p>
+        <p class="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">{{ \App\Models\User::where('role', 'employee')->count() }}</p>
     </div>
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
         <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Belum Validasi</p>

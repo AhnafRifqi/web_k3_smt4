@@ -11,7 +11,7 @@ class VerificationController extends Controller
         $user = auth()->user();
 
         // If already validated, redirect to dashboard
-        if ($user && $user->role !== 'pending' && $user->is_validated) {
+        if ($user && $user->is_validated) {
             return redirect()->route('dashboard');
         }
 

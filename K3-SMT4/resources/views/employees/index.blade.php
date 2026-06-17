@@ -21,7 +21,7 @@
             <span class="flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Pending
-                @php $pendingCount = \App\Models\User::where('role', 'pending')->count(); @endphp
+                @php $pendingCount = \App\Models\User::where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))->count(); @endphp
                 @if($pendingCount > 0)
                 <span class="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs font-medium px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
                 @endif
@@ -69,7 +69,7 @@
                             <span class="text-gray-600 dark:text-gray-400 text-xs">{{ $user->email }}</span>
                         </td>
                         <td class="px-4 py-3 hidden md:table-cell">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $user->role === 'pending' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' }}">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                                 {{ $user->role_label }}
                             </span>
                         </td>

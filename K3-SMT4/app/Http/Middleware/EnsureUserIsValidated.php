@@ -16,8 +16,8 @@ class EnsureUserIsValidated
 
         $user = auth()->user();
 
-        // Jika user pending atau belum divalidasi, redirect ke halaman menunggu verifikasi
-        if ($user->role === 'pending' || $user->is_validated === false) {
+        // Jika user belum divalidasi, redirect ke halaman menunggu verifikasi
+        if ($user->is_validated === false) {
             return redirect()->route('verification.pending');
         }
 

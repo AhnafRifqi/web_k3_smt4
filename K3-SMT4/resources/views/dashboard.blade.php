@@ -38,90 +38,123 @@
 @endif
 
 {{-- Dashboard Filters (GAP 8) --}}
+{{-- Interactive Filters with Live Preview --}}
 @if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))
-<div x-data="{ showFilters: false }" class="mb-6">
-    <button @click="showFilters = !showFilters" class="text-sm text-blue-600 hover:underline flex items-center gap-1 mb-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-        <span x-text="showFilters ? 'Hide Filters' : 'Show Filters'"></span>
-    </button>
+<div x-data="{ showFilters: false, activeTab: 'overview' }" class="mb-6">
+    <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+            <button @click="activeTab = 'overview'" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors" :class="activeTab === 'overview' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">Overview</button>
+            <button @click="activeTab = 'incidents'" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors" :class="activeTab === 'incidents' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">Incidents</button>
+            <button @click="activeTab = 'compliance'" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors" :class="activeTab === 'compliance' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">Compliance</button>
+        </div>
+        <div class="flex items-center gap-2">
+            <button @click="showFilters = !showFilters" class="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                <span x-text="showFilters ? 'Hide Filters' : 'Show Filters'"></span>
+            </button>
+            <a href="{{ route('dashboard.export-pdf') }}"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                PDF
+            </a>
+            <a href="{{ route('dashboard.export-excel') }}"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Excel
+            </a>
+        </div>
+    </div>
     <div x-show="showFilters" x-transition class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm p-4">
         <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <select name="department_id" class="form-input">
+            <select name="department_id" class="form-input w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 text-gray-900 dark:text-slate-100">
                 <option value="">All Departments</option>
                 @foreach($departments as $dept)
                 <option value="{{ $dept->id }}" @selected($departmentId == $dept->id)>{{ $dept->name }}</option>
                 @endforeach
             </select>
-            <input type="date" name="date_from" value="{{ $dateFrom ?? '' }}" class="form-input" placeholder="Date From">
-            <input type="date" name="date_to" value="{{ $dateTo ?? '' }}" class="form-input" placeholder="Date To">
+            <input type="date" name="date_from" value="{{ $dateFrom ?? '' }}" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 text-gray-900 dark:text-slate-100" placeholder="Date From">
+            <input type="date" name="date_to" value="{{ $dateTo ?? '' }}" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 text-gray-900 dark:text-slate-100" placeholder="Date To">
             <div class="flex gap-2">
-                <button type="submit" class="btn-primary bg-blue-600 text-white px-4 py-2 rounded-lg text-sm flex-1">Apply</button>
-                <a href="{{ route('dashboard') }}" class="btn-secondary bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm">Reset</a>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex-1">Apply</button>
+                <a href="{{ route('dashboard') }}" class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Reset</a>
             </div>
         </form>
     </div>
 </div>
 @endif
 
-@if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))
-<div class="flex items-center justify-end gap-3 mb-4">
-    <a href="{{ route('dashboard.export-pdf') }}"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-        Export PDF
-    </a>
-    <a href="{{ route('dashboard.export-excel') }}"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors shadow-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        Export Excel
-    </a>
-</div>
-@endif
+{{-- Animated Stats Cards with Hover Effects --}}
+<div x-data="{
+    safeDays: 0,
+    totalEmployees: 0,
+    totalSops: 0,
+    openIncidents: 0,
+    init() {
+        animateCounter('safeDays', {{ $stats['safe_days'] ?? 0 }}, 2000);
+        animateCounter('totalEmployees', {{ $stats['total_employees'] ?? 0 }}, 2000);
+        animateCounter('totalSops', {{ $stats['total_sops'] ?? 0 }}, 2000);
+        animateCounter('openIncidents', {{ $stats['open_incidents'] ?? 0 }}, 2000);
+    },
+    animateCounter(prop, target, duration) {
+        let start = 0;
+        const step = Math.ceil(target / (duration / 16));
+        const timer = setInterval(() => {
+            start += step;
+            if (start >= target) {
+                this[prop] = target;
+                clearInterval(timer);
+            } else {
+                this[prop] = start;
+            }
+        }, 16);
+    }
+}" x-init="init()" class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
 
-{{-- Stats Cards --}}
-<div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
-
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+    <div class="group bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+        x-on:click="window.location.href='{{ route('incidents.index') }}'">
         <div class="flex items-center justify-between mb-4">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Safe Days</p>
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
         </div>
-        <p class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{{ number_format($stats['safe_days'] ?? 0) }}</p>
+        <p class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400" x-text="safeDays.toLocaleString()">0</p>
         <p class="text-xs text-slate-400 mt-2">Days without LTI</p>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+    <div class="group bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+        x-on:click="window.location.href='{{ route('employees.index') }}'">
         <div class="flex items-center justify-between mb-4">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Karyawan Aktif</p>
-            <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
         </div>
-        <p class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ number_format($stats['total_employees'] ?? 0) }}</p>
+        <p class="text-3xl font-extrabold text-slate-900 dark:text-white" x-text="totalEmployees.toLocaleString()">0</p>
         <p class="text-xs text-slate-400 mt-2">Orang terdaftar aktif</p>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+    <div class="group bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+        x-on:click="window.location.href='{{ route('sops.index') }}'">
         <div class="flex items-center justify-between mb-4">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">SOP Aktif</p>
-            <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+            <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform duration-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </div>
         </div>
-        <p class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ number_format($stats['total_sops'] ?? 0) }}</p>
+        <p class="text-3xl font-extrabold text-slate-900 dark:text-white" x-text="totalSops.toLocaleString()">0</p>
         <p class="text-xs text-slate-400 mt-2">Prosedur K3 berlaku</p>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+    <div class="group bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+        x-on:click="window.location.href='{{ route('incidents.index') }}'">
         <div class="flex items-center justify-between mb-4">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Open Incidents</p>
-            <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400">
+            <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform duration-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
         </div>
-        <p class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ number_format($stats['open_incidents'] ?? 0) }}</p>
+        <p class="text-3xl font-extrabold text-slate-900 dark:text-white" x-text="openIncidents.toLocaleString()">0</p>
         <p class="text-xs mt-2">
             @if(($stats['documents_expiring_soon'] ?? 0) > 0)
             <span class="text-amber-500 font-semibold">{{ $stats['documents_expiring_soon'] }} docs expiring</span>
@@ -133,47 +166,132 @@
 
 </div>
 
-{{-- Second Row Stats --}}
-<div class="grid grid-cols-2 md:grid-cols-3 gap-5 mb-6">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+{{-- Quick Action Cards --}}
+@if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <a href="{{ route('incidents.create') }}" class="group flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+            <p class="text-xs font-bold text-slate-900 dark:text-white">Report Incident</p>
+            <p class="text-[10px] text-slate-500">Laporkan kejadian</p>
+        </div>
+    </a>
+    <a href="{{ route('hazards.create') }}" class="group flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div>
+            <p class="text-xs font-bold text-slate-900 dark:text-white">Identifikasi Bahaya</p>
+            <p class="text-[10px] text-slate-500">Buat HIRARC baru</p>
+        </div>
+    </a>
+    <a href="{{ route('audits.create') }}" class="group flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div>
+            <p class="text-xs font-bold text-slate-900 dark:text-white">Buat Audit</p>
+            <p class="text-[10px] text-slate-500">Audit K3 baru</p>
+        </div>
+    </a>
+    <a href="{{ route('capa.create') }}" class="group flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <div class="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+            <p class="text-xs font-bold text-slate-900 dark:text-white">Buat CAPA</p>
+            <p class="text-[10px] text-slate-500">Tindakan perbaikan</p>
+        </div>
+    </a>
+</div>
+@endif
+
+{{-- Second Row Stats with Interactive Hover --}}
+<div x-data="{ hoveredCard: null }" class="grid grid-cols-2 md:grid-cols-3 gap-5 mb-6">
+    <div @mouseenter="hoveredCard = 'compliance'" @mouseleave="hoveredCard = null"
+        class="relative bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+        x-on:click="window.location.href='{{ route('sop-executions.index') }}'">
+        <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/0 to-emerald-500/5 dark:to-emerald-500/10 opacity-0 transition-opacity duration-300"
+            :class="hoveredCard === 'compliance' ? 'opacity-100' : ''"></div>
         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Kepatuhan SOP</p>
         @php $compliance = $stats['sop_compliance'] ?? 0; @endphp
-        <p class="text-3xl font-extrabold {{ $compliance >= 80 ? 'text-emerald-600' : 'text-amber-600' }}">{{ $compliance }}%</p>
+        <div class="flex items-end gap-3">
+            <p class="text-3xl font-extrabold {{ $compliance >= 80 ? 'text-emerald-600' : 'text-amber-600' }}">{{ $compliance }}%</p>
+            <span class="text-xs font-medium {{ $compliance >= 80 ? 'text-emerald-500' : 'text-amber-500' }} mb-1">
+                <template x-if="hoveredCard === 'compliance'">→</template>
+            </span>
+        </div>
+        <div class="mt-3 w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-1000 {{ $compliance >= 80 ? 'bg-emerald-500' : 'bg-amber-500' }}" style="width: {{ $compliance }}%"></div>
+        </div>
         <p class="text-xs text-slate-400 mt-2">Bulan ini</p>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+    <div @mouseenter="hoveredCard = 'capa'" @mouseleave="hoveredCard = null"
+        class="relative bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+        x-on:click="window.location.href='{{ route('capa.index') }}'">
+        <div class="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/0 to-amber-500/5 dark:to-amber-500/10 opacity-0 transition-opacity duration-300"
+            :class="hoveredCard === 'capa' ? 'opacity-100' : ''"></div>
         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">CAPA Open / Overdue</p>
-        <p class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ number_format($stats['open_capa'] ?? 0) }}</p>
+        <div class="flex items-end gap-3">
+            <p class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ number_format($stats['open_capa'] ?? 0) }}</p>
+            <span class="text-xs font-medium text-slate-500 mb-1">
+                <template x-if="hoveredCard === 'capa'">→</template>
+            </span>
+        </div>
         <p class="text-xs mt-2">
             @if(($stats['overdue_capa'] ?? 0) > 0)
-            <span class="text-rose-500 font-semibold">{{ $stats['overdue_capa'] }} overdue!</span>
+            <span class="inline-flex items-center gap-1 text-rose-500 font-semibold">
+                <svg class="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10"/></svg>
+                {{ $stats['overdue_capa'] }} overdue!
+            </span>
             @else
-            <span class="text-slate-400">All on-track</span>
+            <span class="text-slate-400">All on-track ✓</span>
             @endif
         </p>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+    <div @mouseenter="hoveredCard = 'docs'" @mouseleave="hoveredCard = null"
+        class="relative bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+        x-on:click="window.location.href='{{ route('k3-documents.index') }}'">
+        <div class="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/0 to-purple-500/5 dark:to-purple-500/10 opacity-0 transition-opacity duration-300"
+            :class="hoveredCard === 'docs' ? 'opacity-100' : ''"></div>
         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Docs Expiring</p>
-        <p class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ number_format($stats['documents_expiring_soon'] ?? 0) }}</p>
+        <div class="flex items-end gap-3">
+            <p class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ number_format($stats['documents_expiring_soon'] ?? 0) }}</p>
+            <span class="text-xs font-medium text-slate-500 mb-1">
+                <template x-if="hoveredCard === 'docs'">→</template>
+            </span>
+        </div>
         <p class="text-xs mt-2">
             @if(($stats['documents_expiring_soon'] ?? 0) > 0)
-            <a href="{{ route('k3-documents.index') }}" class="text-amber-500 hover:underline font-semibold">Review now</a>
+            <a href="{{ route('k3-documents.index') }}" class="text-amber-500 hover:underline font-semibold">Review now →</a>
             @else
-            <span class="text-slate-400">No docs expiring</span>
+            <span class="text-slate-400">No docs expiring ✓</span>
             @endif
         </p>
     </div>
 </div>
 
-{{-- Charts Row --}}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+{{-- Interactive Charts Row --}}
+<div x-data="{ chartPeriod: 6 }" class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
     <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col">
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h3 class="font-bold text-slate-900 dark:text-white text-base">Tren Kepatuhan SOP</h3>
-                <p class="text-sm text-slate-500 mt-1">6 bulan terakhir</p>
+                <p class="text-sm text-slate-500 mt-1">
+                    <span x-text="chartPeriod"></span> bulan terakhir
+                </p>
+            </div>
+            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-0.5">
+                <button @click="chartPeriod = 3" class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
+                    :class="chartPeriod === 3 ? 'bg-white dark:bg-slate-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'">3M</button>
+                <button @click="chartPeriod = 6" class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
+                    :class="chartPeriod === 6 ? 'bg-white dark:bg-slate-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'">6M</button>
+                <button @click="chartPeriod = 12" class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
+                    :class="chartPeriod === 12 ? 'bg-white dark:bg-slate-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'">12M</button>
             </div>
         </div>
         <div class="relative w-full h-64 flex-1">
@@ -190,15 +308,15 @@
             <canvas id="capaChart"></canvas>
         </div>
         <div class="mt-6 space-y-3">
-            <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer" x-on:click="window.location.href='{{ route('capa.index', ['status' => 'open']) }}'">
                 <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rose-400 inline-block"></span> Open</span>
                 <span class="font-bold text-slate-700 dark:text-slate-300">{{ $capaByStatus['open'] ?? 0 }}</span>
             </div>
-            <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer" x-on:click="window.location.href='{{ route('capa.index', ['status' => 'in_progress']) }}'">
                 <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span> In Progress</span>
                 <span class="font-bold text-slate-700 dark:text-slate-300">{{ $capaByStatus['in_progress'] ?? 0 }}</span>
             </div>
-            <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer" x-on:click="window.location.href='{{ route('capa.index', ['status' => 'closed']) }}'">
                 <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span> Closed</span>
                 <span class="font-bold text-slate-700 dark:text-slate-300">{{ $capaByStatus['closed'] ?? 0 }}</span>
             </div>
