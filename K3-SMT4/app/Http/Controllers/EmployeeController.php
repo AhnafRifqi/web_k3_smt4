@@ -62,10 +62,9 @@ class EmployeeController extends Controller
      */
     public function approvePending(Request $request, User $user)
     {
-        // Jika role masih 'pending', ubah menjadi karyawan
-        if ($user->role === 'pending') {
+        // Jika role masih 'employee' dan belum divalidasi, validasi
+        if ($user->role === 'employee' && !$user->is_validated) {
             $user->update([
-                'role' => 'karyawan',
                 'is_validated' => true,
             ]);
         } else {
@@ -82,8 +81,8 @@ class EmployeeController extends Controller
      */
     public function rejectPending(Request $request, User $user)
     {
-        if ($user->role !== 'pending') {
-            return back()->with('error', 'User ini bukan dalam status pending.');
+        if ($user->is_validated) {
+            return back()->with('error', 'User ini sudah divalidasi.');
         }
 
         $name = $user->name;
@@ -96,7 +95,7 @@ class EmployeeController extends Controller
     public function create()
     {
         $departments = Department::active()->get();
-        $pendingUsers = User::where('role', 'pending')->get();
+        $pendingUsers = User::where('is_validated', false)->get();
         return view('employees.create', compact('departments', 'pendingUsers'));
     }
 

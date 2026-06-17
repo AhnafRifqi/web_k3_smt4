@@ -41,11 +41,13 @@
                         <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Peran</p>
                         @php
                             $roleColors = [
-                                'admin' => 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-                                'supervisor_k3' => 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                'super_admin' => 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+                                'k3_manager' => 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                'k3_officer' => 'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+                                'dept_head' => 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+                                'employee' => 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
                                 'auditor' => 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-                                'karyawan' => 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                'pending' => 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                                'viewer' => 'bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
                             ];
                             $colorClass = $roleColors[$user->role] ?? 'bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
                         @endphp
@@ -72,11 +74,7 @@
                     <div>
                         <p class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Status Validasi</p>
                         <div class="mt-1">
-                            @if($user->role === 'pending')
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
-                                    Pending
-                                </span>
-                            @elseif($user->is_validated)
+                            @if($user->is_validated)
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
                                     Sudah Validasi
                                 </span>
