@@ -34,33 +34,26 @@ class DashboardController extends Controller
             $departmentId = $user->employee->department_id;
         }
 
-        // Build base query scopes
-        $empQuery = Employee::where('status', 'aktif');
-        $sopQuery = Sop::where('status', 'aktif');
-        $incidentQuery = Incident::query();
-        $docQuery = K3Document::query();
+        // Total Karyawan (semua status, tanpa filter department)
+        $totalEmployees = Employee::count();
 
-        // Apply department filter
+        // Open incidents (tanpa filter department untuk akurasi global)
+        $openIncidents = Incident::where('status', '!=', 'closed')->count();
+
+        // Apply department filter hanya untuk incident chart (bila diperlukan)
+        $incidentQuery = Incident::query();
         if ($departmentId) {
-            $empQuery->where('department_id', $departmentId);
             $incidentQuery->where('department_id', $departmentId);
         }
 
-        // Apply date range filter
-        if ($dateFrom) {
-            $incidentQuery->whereDate('incident_date', '>=', $dateFrom);
-        }
-        if ($dateTo) {
-            $incidentQuery->whereDate('incident_date', '<=', $dateTo);
-        }
-
-        // Stats
+        // Safe Days
         $lastLti = Incident::where('incident_type', 'lost_time_injury')
             ->where('status', 'closed')
             ->orderBy('incident_date', 'desc')
             ->first();
         $safeDays = $lastLti ? $lastLti->incident_date->diffInDays(now()) : 365;
 
+        // CAPA Stats
         $capaStats = Capa::selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
@@ -113,7 +106,7 @@ class DashboardController extends Controller
             $incidentChartData[] = $row;
         }
 
-        // Recent incidents
+        // Recent incidents (tanpa filter department)
         $recentIncidents = Incident::with(['department', 'reporter'])
             ->where('status', '!=', 'closed')
             ->latest('incident_date')
@@ -156,9 +149,9 @@ class DashboardController extends Controller
         return response()->json([
             'stats' => [
                 'safe_days' => $safeDays,
-                'total_employees' => $empQuery->count(),
-                'total_sops' => $sopQuery->count(),
-                'open_incidents' => Incident::where('status', '!=', 'closed')->count(),
+                'total_employees' => $totalEmployees,
+                'total_sops' => Sop::where('status', 'aktif')->count(),
+                'open_incidents' => $openIncidents,
                 'sop_compliance' => $sopCompliance,
                 'open_capa' => $capaStats['open'] ?? 0,
                 'overdue_capa' => Capa::where('status', '!=', 'closed')->where('target_date', '<', now())->count(),
@@ -197,7 +190,7 @@ class DashboardController extends Controller
         }
 
         // Build base query scopes
-        $empQuery = Employee::where('status', 'aktif');
+        $empQuery = Employee::query(); // Semua karyawan tanpa filter status
         $sopQuery = Sop::where('status', 'aktif');
         $auditQuery = Audit::query();
         $findingQuery = AuditFinding::query();
