@@ -57,6 +57,7 @@ class IncidentController extends Controller
             'injured_persons'        => 'nullable',
             'witnesses'              => 'nullable',
             'immediate_action_taken' => 'nullable',
+            'immediate_cause'        => 'nullable',
             'capa_required'          => 'boolean',
         ]);
 
@@ -106,6 +107,7 @@ class IncidentController extends Controller
             'injured_persons'        => 'nullable',
             'witnesses'              => 'nullable',
             'immediate_action_taken' => 'nullable',
+            'immediate_cause'        => 'nullable',
             'status'                 => 'required|in:reported,under_investigation,corrective_action,closed',
             'root_cause'             => 'nullable',
             'lesson_learned'         => 'nullable',

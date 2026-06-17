@@ -12,7 +12,7 @@ class Incident extends Model
     protected $fillable = [
         'incident_number', 'title', 'description', 'incident_date', 'location',
         'department_id', 'incident_type', 'severity', 'injured_persons', 'witnesses',
-        'immediate_action_taken', 'reported_by', 'investigated_by', 'status',
+        'immediate_action_taken', 'immediate_cause', 'reported_by', 'investigated_by', 'status',
         'root_cause', 'lesson_learned', 'evidence_urls', 'capa_required',
         'incident_capa_id', 'closed_at',
     ];

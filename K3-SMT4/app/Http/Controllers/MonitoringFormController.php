@@ -235,7 +235,7 @@ class MonitoringFormController extends Controller
         $data = $request->validate([
             'assigned_to_type' => 'required|in:department,user',
             'assigned_to_id' => 'required|integer',
-            'frequency' => 'required|in:daily,weekly,monthly,once',
+            'frequency' => 'required|in:daily,weekly,monthly,once,per_event,ad_hoc',
             'due_date' => 'nullable|date',
         ]);
 
@@ -310,7 +310,10 @@ class MonitoringFormController extends Controller
         $rules = ['status' => 'required|in:submitted,draft'];
         foreach ($monitoringForm->fields as $field) {
             $key = 'field_' . $field->id;
-            if ($field->is_required && $request->input('status') === 'submitted') {
+            if ($field->field_type === 'photo') {
+                $required = $field->is_required && $request->input('status') === 'submitted' ? 'required' : 'nullable';
+                $rules[$key] = $required . '|file|image|max:51200';
+            } elseif ($field->is_required && $request->input('status') === 'submitted') {
                 $rules[$key] = 'required';
             } else {
                 $rules[$key] = 'nullable';
@@ -359,6 +362,10 @@ class MonitoringFormController extends Controller
             ]
         );
 
+        if ($status === 'submitted') {
+            $submission->update(['approval_status' => 'pending_approval']);
+        }
+
         $action = $status === 'submitted' ? 'monitoring_form.submitted' : 'monitoring_form.draft_saved';
         $desc = $status === 'submitted'
             ? "Form \"{$monitoringForm->title}\" disubmit"
@@ -366,12 +373,80 @@ class MonitoringFormController extends Controller
 
         ActivityLogService::log($action, 'monitoring_forms', $desc, $submission);
 
+        if ($status === 'submitted') {
+            NotificationService::sendToRoles(
+                ['k3_manager', 'k3_officer', 'dept_head'],
+                'form.submitted',
+                'Form Monitoring Perlu Persetujuan: ' . $monitoringForm->title,
+                auth()->user()->name . ' telah mengisi form "' . $monitoringForm->title . '" dan menunggu persetujuan.',
+                route('monitoring-forms.show', $monitoringForm)
+            );
+        }
+
         $message = $status === 'submitted'
-            ? 'Form monitoring berhasil disubmit.'
+            ? 'Form monitoring berhasil disubmit dan menunggu persetujuan.'
             : 'Draft form monitoring berhasil disimpan.';
 
         return redirect()->route('monitoring-forms.show', $monitoringForm)
             ->with('success', $message);
+    }
+
+    public function approveSubmission(Request $request, MonitoringForm $monitoringForm, FormSubmission $submission)
+    {
+        abort_if($submission->form_id !== $monitoringForm->id, 404);
+
+        $data = $request->validate(['review_notes' => 'nullable|string|max:1000']);
+
+        $submission->update([
+            'approval_status' => 'approved',
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+            'review_notes' => $data['review_notes'] ?? null,
+        ]);
+
+        ActivityLogService::log('form_submission.approved', 'monitoring_forms', "Submission form \"{$monitoringForm->title}\" disetujui", $submission);
+
+        if ($submission->submitter) {
+            NotificationService::send(
+                $submission->submitter,
+                'form.approved',
+                'Form Disetujui: ' . $monitoringForm->title,
+                'Pengisian form "' . $monitoringForm->title . '" Anda telah disetujui oleh ' . auth()->user()->name . '.',
+                route('monitoring-forms.show', $monitoringForm)
+            );
+        }
+
+        return redirect()->route('monitoring-forms.show', $monitoringForm)
+            ->with('success', 'Submission berhasil disetujui.');
+    }
+
+    public function rejectSubmission(Request $request, MonitoringForm $monitoringForm, FormSubmission $submission)
+    {
+        abort_if($submission->form_id !== $monitoringForm->id, 404);
+
+        $data = $request->validate(['review_notes' => 'nullable|string|max:1000']);
+
+        $submission->update([
+            'approval_status' => 'rejected',
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+            'review_notes' => $data['review_notes'] ?? null,
+        ]);
+
+        ActivityLogService::log('form_submission.rejected', 'monitoring_forms', "Submission form \"{$monitoringForm->title}\" ditolak", $submission);
+
+        if ($submission->submitter) {
+            NotificationService::send(
+                $submission->submitter,
+                'form.rejected',
+                'Form Ditolak: ' . $monitoringForm->title,
+                'Pengisian form "' . $monitoringForm->title . '" Anda ditolak oleh ' . auth()->user()->name . ($data['review_notes'] ? '. Catatan: ' . $data['review_notes'] : '.'),
+                route('monitoring-forms.show', $monitoringForm)
+            );
+        }
+
+        return redirect()->route('monitoring-forms.show', $monitoringForm)
+            ->with('success', 'Submission ditolak.');
     }
 
     private function authorizeAssignment(MonitoringForm $monitoringForm, FormAssignment $assignment): void

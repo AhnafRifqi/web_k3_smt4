@@ -89,6 +89,12 @@
                 </div>
 
                 <div class="md:col-span-2">
+                    <label class="form-label">Immediate Cause</label>
+                    <textarea name="immediate_cause" rows="3" class="form-input w-full" placeholder="Penyebab langsung kejadian">{{ old('immediate_cause', $incident->immediate_cause) }}</textarea>
+                    @error('immediate_cause') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="md:col-span-2">
                     <label class="form-label">Description *</label>
                     <textarea name="description" rows="4" class="form-input w-full" required>{{ old('description', $incident->description) }}</textarea>
                 </div>
