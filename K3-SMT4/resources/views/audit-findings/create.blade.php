@@ -61,8 +61,24 @@
                 @error('description') <p class="text-xs text-red-500 mt-1.5 ml-1">{{ $message }}</p> @enderror
             </div>
 
-            {{-- Severity & Status --}}
+            {{-- Severity, Finding Type & Status --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Tipe Temuan</label>
+                    <div class="relative">
+                        <select name="finding_type"
+                            class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 px-4 pr-10 py-3 text-gray-900 dark:text-slate-100 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer">
+                            <option value="non_conformance" {{ old('finding_type') == 'non_conformance' ? 'selected' : '' }}>Ketidaksesuaian (NCR)</option>
+                            <option value="conformance" {{ old('finding_type') == 'conformance' ? 'selected' : '' }}>Kesesuaian (OFI)</option>
+                            <option value="observation" {{ old('finding_type') == 'observation' ? 'selected' : '' }}>Observasi</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                    </div>
+                    @error('finding_type') <p class="text-xs text-red-500 mt-1.5 ml-1">{{ $message }}</p> @enderror
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Tingkat</label>
                     <div class="relative">

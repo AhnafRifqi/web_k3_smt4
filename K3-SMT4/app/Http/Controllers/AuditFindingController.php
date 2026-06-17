@@ -33,6 +33,7 @@ class AuditFindingController extends Controller
             'finding_number' => 'required|max:20',
             'description'    => 'required',
             'severity'       => 'required|in:minor,major,critical',
+            'finding_type'   => 'required|in:non_conformance,conformance,observation',
             'area'           => 'nullable|max:200',
             'standard_ref'   => 'nullable|max:200',
             'recommendation' => 'nullable',
@@ -59,6 +60,7 @@ class AuditFindingController extends Controller
         $data = $request->validate([
             'description'    => 'required',
             'severity'       => 'required|in:minor,major,critical',
+            'finding_type'   => 'required|in:non_conformance,conformance,observation',
             'area'           => 'nullable|max:200',
             'standard_ref'   => 'nullable|max:200',
             'recommendation' => 'nullable',

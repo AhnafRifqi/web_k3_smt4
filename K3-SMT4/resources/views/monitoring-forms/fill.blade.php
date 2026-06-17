@@ -97,8 +97,22 @@
                         @break
 
                     @case('signature')
-                        <textarea name="{{ $fieldKey }}" rows="2" placeholder="Ketik nama / catatan tanda tangan"
-                            class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 px-4 py-3 text-gray-900 dark:text-slate-100 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">{{ $existingValue }}</textarea>
+                        @php $sigId = 'sig_canvas_' . $field->id; @endphp
+                        <div class="space-y-2">
+                            <div class="border-2 border-gray-200 dark:border-slate-600 rounded-xl overflow-hidden bg-white" style="touch-action: none;">
+                                <canvas id="{{ $sigId }}" width="600" height="150" class="w-full cursor-crosshair"></canvas>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button type="button" onclick="clearSignature('{{ $sigId }}', '{{ $fieldKey }}')"
+                                    class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                    Hapus
+                                </button>
+                                @if($existingValue && str_starts_with($existingValue, 'data:image'))
+                                <span class="text-xs text-green-600">Tanda tangan tersimpan</span>
+                                @endif
+                            </div>
+                            <input type="hidden" name="{{ $fieldKey }}" id="input_{{ $fieldKey }}" value="{{ $existingValue }}">
+                        </div>
                         @break
 
                     @case('rating')
@@ -134,4 +148,81 @@
         </form>
     </div>
 </div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script>
+const signaturePads = {};
+
+document.querySelectorAll('[id^="sig_canvas_"]').forEach(canvas => {
+    const fieldId = canvas.id.replace('sig_canvas_', '');
+    const inputName = 'field_' + fieldId;
+    const hiddenInput = document.getElementById('input_' + inputName);
+
+    const pad = new SignaturePad(canvas, {
+        backgroundColor: 'rgb(255,255,255)',
+        penColor: 'rgb(0,0,0)',
+    });
+
+    signaturePads[canvas.id] = pad;
+
+    // Restore existing signature if present
+    if (hiddenInput && hiddenInput.value && hiddenInput.value.startsWith('data:image')) {
+        pad.fromDataURL(hiddenInput.value);
+    }
+
+    // Update hidden input on each stroke
+    pad.addEventListener('afterUpdateStroke', () => {
+        if (hiddenInput) hiddenInput.value = pad.toDataURL();
+    });
+
+    // Resize canvas while preserving ratio
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        const data = pad.toData();
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext('2d').scale(ratio, ratio);
+        pad.clear();
+        pad.fromData(data);
+    }
+    window.addEventListener('resize', resizeCanvas);
+});
+
+function clearSignature(canvasId, inputName) {
+    const pad = signaturePads[canvasId];
+    if (pad) {
+        pad.clear();
+        const hiddenInput = document.getElementById('input_' + inputName);
+        if (hiddenInput) hiddenInput.value = '';
+    }
+}
+
+// Client-side 50MB file size validation for photo fields
+document.querySelectorAll('input[type="file"]').forEach(input => {
+    input.addEventListener('change', function() {
+        const maxBytes = 50 * 1024 * 1024;
+        for (const file of this.files) {
+            if (file.size > maxBytes) {
+                alert(`File "${file.name}" melebihi batas 50 MB. Silakan pilih file yang lebih kecil.`);
+                this.value = '';
+                return;
+            }
+        }
+    });
+});
+
+// Capture signature data before form submit
+document.querySelector('form').addEventListener('submit', function() {
+    Object.entries(signaturePads).forEach(([canvasId, pad]) => {
+        const fieldId = canvasId.replace('sig_canvas_', '');
+        const inputName = 'field_' + fieldId;
+        const hiddenInput = document.getElementById('input_' + inputName);
+        if (hiddenInput && !pad.isEmpty()) {
+            hiddenInput.value = pad.toDataURL();
+        }
+    });
+});
+</script>
+@endpush
 @endsection

@@ -13,8 +13,10 @@ use App\Models\Incident;
 use App\Models\K3Document;
 use App\Models\Sop;
 use App\Models\SopExecution;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DashboardController extends Controller
 {
@@ -203,6 +205,77 @@ class DashboardController extends Controller
             'recentIncidents', 'departments', 'departmentId',
             'dateFrom', 'dateTo', 'heatmapData'
         ));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $stats = $this->buildStatsForExport();
+        $pdf = Pdf::loadView('dashboard-export-pdf', compact('stats'))->setPaper('a4');
+        return $pdf->download('dashboard-k3-' . now()->format('Ymd') . '.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $stats = $this->buildStatsForExport();
+        $filename = 'dashboard-k3-' . now()->format('Ymd') . '.xlsx';
+
+        return Excel::download(new class($stats) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithTitle {
+            public function __construct(private array $stats) {}
+
+            public function title(): string { return 'Dashboard K3'; }
+
+            public function headings(): array
+            {
+                return ['Indikator', 'Nilai'];
+            }
+
+            public function array(): array
+            {
+                return [
+                    ['Safe Days (tanpa LTI)', $this->stats['safe_days']],
+                    ['Karyawan Aktif', $this->stats['total_employees']],
+                    ['SOP Aktif', $this->stats['total_sops']],
+                    ['Open Incidents', $this->stats['open_incidents']],
+                    ['Total Audit', $this->stats['total_audits']],
+                    ['Total Temuan', $this->stats['total_findings']],
+                    ['Temuan Open', $this->stats['open_findings']],
+                    ['Temuan Closed', $this->stats['closed_findings']],
+                    ['CAPA Open', $this->stats['open_capa']],
+                    ['CAPA Overdue', $this->stats['overdue_capa']],
+                    ['Kepatuhan SOP (%)', $this->stats['sop_compliance']],
+                    ['Dokumen Akan Kadaluarsa (30 hari)', $this->stats['documents_expiring_soon']],
+                    ['Form Overdue', $this->stats['overdue_forms']],
+                ];
+            }
+        }, $filename);
+    }
+
+    private function buildStatsForExport(): array
+    {
+        $lastLti = Incident::where('incident_type', 'lost_time_injury')
+            ->where('status', 'closed')->orderBy('incident_date', 'desc')->first();
+
+        $findingStats = AuditFinding::selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $capaStats = Capa::selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $thisMonth = Carbon::now();
+        $execThisMonth = SopExecution::whereYear('execution_date', $thisMonth->year)->whereMonth('execution_date', $thisMonth->month)->get();
+        $totalExec = $execThisMonth->count();
+
+        return [
+            'safe_days'               => $lastLti ? $lastLti->incident_date->diffInDays(now()) : 365,
+            'total_employees'         => Employee::where('status', 'aktif')->count(),
+            'total_sops'              => Sop::where('status', 'aktif')->count(),
+            'open_incidents'          => Incident::where('status', '!=', 'closed')->count(),
+            'total_audits'            => Audit::count(),
+            'total_findings'          => AuditFinding::count(),
+            'open_findings'           => $findingStats['open'] ?? 0,
+            'closed_findings'         => $findingStats['closed'] ?? 0,
+            'open_capa'               => $capaStats['open'] ?? 0,
+            'overdue_capa'            => Capa::where('status', '!=', 'closed')->where('target_date', '<', now())->count(),
+            'sop_compliance'          => $totalExec > 0 ? round(($execThisMonth->where('status', 'sesuai')->count() / $totalExec) * 100, 1) : 0,
+            'documents_expiring_soon' => K3Document::where('workflow_status', 'approved')->whereNotNull('review_due_date')->whereDate('review_due_date', '>=', now())->whereDate('review_due_date', '<=', now()->addDays(30))->count(),
+            'overdue_forms'           => FormAssignment::whereNotNull('due_date')->where('due_date', '<', now())->whereDoesntHave('submissions', fn($q) => $q->where('status', 'submitted'))->count(),
+        ];
     }
 
     private function buildHeatmapData(?int $departmentFilter = null): array

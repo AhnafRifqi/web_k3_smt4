@@ -56,11 +56,13 @@ class FormAssignment extends Model
     public function getFrequencyLabelAttribute(): string
     {
         return match ($this->frequency) {
-            'daily' => 'Harian',
-            'weekly' => 'Mingguan',
-            'monthly' => 'Bulanan',
-            'once' => 'Sekali',
-            default => $this->frequency,
+            'daily'     => 'Harian',
+            'weekly'    => 'Mingguan',
+            'monthly'   => 'Bulanan',
+            'once'      => 'Sekali',
+            'per_event' => 'Per Kejadian',
+            'ad_hoc'    => 'Ad Hoc',
+            default     => $this->frequency,
         };
     }
 }

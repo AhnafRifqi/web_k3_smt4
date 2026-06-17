@@ -47,19 +47,25 @@ class K3Document extends Model
     }
 
     // Accessors
+    public static function categoryOptions(): array
+    {
+        return [
+            'kebijakan_k3'      => 'Kebijakan K3',
+            'sop'               => 'SOP',
+            'hiradc'            => 'HIRADC',
+            'apd'               => 'APD',
+            'emergency_response' => 'Emergency Response Plan',
+            'audit'             => 'Audit',
+            'training'          => 'Training',
+            'legal_regulatory'  => 'Legal & Regulatory References',
+            'records_evidence'  => 'Records & Evidence',
+            'lainnya'           => 'Lainnya',
+        ];
+    }
+
     public function getCategoryLabelAttribute(): string
     {
-        return match($this->category) {
-            'kebijakan_k3'     => 'Kebijakan K3',
-            'sop'              => 'SOP',
-            'hiradc'           => 'HIRADC',
-            'apd'              => 'APD',
-            'emergency_response' => 'Emergency Response Plan',
-            'audit'            => 'Audit',
-            'training'         => 'Training',
-            'lainnya'          => 'Lainnya',
-            default            => '-',
-        };
+        return self::categoryOptions()[$this->category] ?? $this->category ?? '-';
     }
 
     public function getWorkflowStatusLabelAttribute(): string

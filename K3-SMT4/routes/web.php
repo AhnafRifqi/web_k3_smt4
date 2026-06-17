@@ -43,6 +43,10 @@ Route::middleware(['auth'])->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::middleware('role:super_admin,k3_manager,k3_officer')->group(function () {
+            Route::get('/dashboard/export-pdf', [DashboardController::class, 'exportPdf'])->name('dashboard.export-pdf');
+            Route::get('/dashboard/export-excel', [DashboardController::class, 'exportExcel'])->name('dashboard.export-excel');
+        });
 
         // Profile (accessible by all validated users)
         Route::middleware('role:super_admin,k3_manager,k3_officer,dept_head,employee,auditor,viewer')->group(function () {
@@ -186,6 +190,11 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/monitoring-forms/{monitoringForm}', [MonitoringFormController::class, 'update'])->name('monitoring-forms.update');
             Route::delete('/monitoring-forms/{monitoringForm}', [MonitoringFormController::class, 'destroy'])->name('monitoring-forms.destroy');
             Route::post('/monitoring-forms/{monitoringForm}/assign', [MonitoringFormController::class, 'assign'])->name('monitoring-forms.assign');
+        });
+
+        Route::middleware('role:super_admin,k3_manager,k3_officer,dept_head')->group(function () {
+            Route::post('/monitoring-forms/{monitoringForm}/submissions/{submission}/approve', [MonitoringFormController::class, 'approveSubmission'])->name('monitoring-forms.submissions.approve');
+            Route::post('/monitoring-forms/{monitoringForm}/submissions/{submission}/reject', [MonitoringFormController::class, 'rejectSubmission'])->name('monitoring-forms.submissions.reject');
         });
 
         // ---- ACTIVITY LOGS (GAP 4) ----
