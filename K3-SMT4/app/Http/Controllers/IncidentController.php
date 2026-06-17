@@ -60,7 +60,7 @@ class IncidentController extends Controller
             'capa_required'          => 'boolean',
         ]);
 
-        $data['incident_number'] = 'INC-' . date('Ymd') . '-' . str_pad(Incident::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT);
+        $data['incident_number'] = 'INC-' . date('Ymd') . '-' . str_pad(Incident::count() + 1, 4, '0', STR_PAD_LEFT);
         $data['reported_by'] = auth()->id();
         $data['status'] = 'reported';
         $data['capa_required'] = $request->boolean('capa_required');
