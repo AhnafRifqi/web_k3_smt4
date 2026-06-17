@@ -1,6 +1,12 @@
 [phases.setup]
 nixPkgs = ["php83", "php83Extensions.pgsql", "php83Extensions.pdo", "php83Extensions.pdo_pgsql", "php83Extensions.mbstring", "php83Extensions.xml", "php83Extensions.curl", "php83Extensions.zip", "php83Extensions.gd", "php83Packages.composer", "nodejs_22"]
 
+[env]
+PHP_INI_POST_MAX_SIZE = "64M"
+PHP_INI_UPLOAD_MAX_FILESIZE = "64M"
+PHP_INI_MAX_EXECUTION_TIME = "300"
+PHP_INI_MAX_INPUT_TIME = "300"
+
 [phases.install]
 cmds = ["composer install --no-dev --optimize-autoloader", "npm ci"]
 
@@ -8,4 +14,4 @@ cmds = ["composer install --no-dev --optimize-autoloader", "npm ci"]
 cmds = ["npm run build", "php artisan config:cache", "php artisan route:cache", "php artisan view:cache"]
 
 [start]
-cmd = "php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+cmd = "php -d post_max_size=64M -d upload_max_filesize=64M -d max_execution_time=300 artisan migrate --force && php -d post_max_size=64M -d upload_max_filesize=64M -d max_execution_time=300 artisan db:seed --force && php -d post_max_size=64M -d upload_max_filesize=64M -d max_execution_time=300 artisan serve --host=0.0.0.0 --port=$PORT"
