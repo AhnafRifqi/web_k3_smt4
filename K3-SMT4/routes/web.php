@@ -108,6 +108,9 @@ Route::middleware(['auth'])->group(function () {
         });
         Route::get('/k3-documents', [K3DocumentController::class, 'index'])->name('k3-documents.index');
         Route::get('/k3-documents/{k3Document}', [K3DocumentController::class, 'show'])->name('k3-documents.show');
+        // Document download & stream proxy (accessible by all validated users)
+        Route::get('/k3-documents/{k3Document}/download', [K3DocumentController::class, 'download'])->name('k3-documents.download');
+        Route::get('/k3-documents/{k3Document}/stream', [K3DocumentController::class, 'stream'])->name('k3-documents.stream');
 
         // ---- Pelaksanaan SOP ----
         Route::get('/sop-executions', [SopExecutionController::class, 'index'])->name('sop-executions.index');

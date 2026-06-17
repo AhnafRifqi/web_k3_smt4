@@ -7,6 +7,7 @@ use App\Models\K3Document;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 class K3DocumentController extends Controller
 {
@@ -160,5 +161,86 @@ class K3DocumentController extends Controller
         ]);
 
         return $result->getSecurePath();
+    }
+
+    /**
+     * Download document file proxy.
+     * Fetches the file from Cloudinary server-side and serves it with proper headers,
+     * avoiding CORS / Content-Disposition issues with Cloudinary raw URLs.
+     */
+    public function download(K3Document $k3Document, Request $request)
+    {
+        if (!$k3Document->file_url) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        $extension = strtolower(pathinfo(parse_url($k3Document->file_url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
+        $filename = Str::slug($k3Document->title) . '.' . ($extension ?: 'pdf');
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $k3Document->file_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_TIMEOUT => 120,
+        ]);
+        $fileContent = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || $fileContent === false) {
+            abort(502, 'Gagal mengambil file dari penyimpanan.');
+        }
+
+        return response($fileContent, 200, [
+            'Content-Type' => $contentType ?: 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Length' => strlen($fileContent),
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
+    }
+
+    /**
+     * Stream document inline in browser (for PDF preview).
+     */
+    public function stream(K3Document $k3Document)
+    {
+        if (!$k3Document->file_url) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        $extension = strtolower(pathinfo(parse_url($k3Document->file_url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
+        $filename = Str::slug($k3Document->title) . '.' . ($extension ?: 'pdf');
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $k3Document->file_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_TIMEOUT => 120,
+        ]);
+        $fileContent = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || $fileContent === false) {
+            abort(502, 'Gagal mengambil file dari penyimpanan.');
+        }
+
+        // For PDF: serve inline so browser renders it
+        $disposition = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])
+            ? 'inline'
+            : 'inline';
+
+        return response($fileContent, 200, [
+            'Content-Type' => $contentType ?: 'application/pdf',
+            'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
+            'Content-Length' => strlen($fileContent),
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 }

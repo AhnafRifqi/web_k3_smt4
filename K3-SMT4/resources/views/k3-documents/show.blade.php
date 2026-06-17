@@ -60,12 +60,12 @@
                     <img src="{{ $k3Document->file_url }}" alt="{{ $k3Document->title }}" class="max-w-full max-h-64 rounded-lg border border-gray-200 dark:border-gray-700 object-contain">
                     @endif
                     <div class="flex flex-wrap gap-3 mt-2">
-                        @if($isPdf)
-                        <a href="{{ $k3Document->file_url }}" target="_blank" class="inline-flex items-center gap-2 text-blue-600 hover:underline font-medium">
+                    @if($isPdf)
+                        <a href="{{ route('k3-documents.stream', $k3Document) }}" target="_blank" class="inline-flex items-center gap-2 text-blue-600 hover:underline font-medium">
                             Lihat PDF
                         </a>
                         @endif
-                        <a href="{{ $k3Document->file_url }}" target="_blank" download class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
+                        <a href="{{ route('k3-documents.download', $k3Document) }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
                             Unduh File
                         </a>
                     </div>
