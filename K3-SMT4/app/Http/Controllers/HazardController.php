@@ -63,7 +63,7 @@ class HazardController extends Controller
             'sop_id'                  => 'nullable|exists:sops,id',
         ]);
 
-        $data['hazard_number'] = 'HAZ-' . date('Ymd') . '-' . str_pad(Hazard::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT);
+        $data['hazard_number'] = 'HAZ-' . date('Ymd') . '-' . str_pad(Hazard::count() + 1, 4, '0', STR_PAD_LEFT);
 
         // Calculate risk score
         $risk = Hazard::calculateRiskScore($data['likelihood'], $data['severity']);

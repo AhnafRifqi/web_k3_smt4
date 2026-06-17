@@ -89,7 +89,8 @@
                             <th class="text-left py-2 pr-4">Pengisi</th>
                             <th class="text-left py-2 pr-4">Departemen</th>
                             <th class="text-left py-2 pr-4">Tanggal</th>
-                            <th class="text-left py-2">Status</th>
+                            <th class="text-left py-2 pr-4">Status</th>
+                            <th class="text-left py-2">Approval</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,10 +99,43 @@
                             <td class="py-2 pr-4 text-gray-800 dark:text-gray-200">{{ $sub->submitter?->name ?? '-' }}</td>
                             <td class="py-2 pr-4 text-gray-500">{{ $sub->department?->name ?? '-' }}</td>
                             <td class="py-2 pr-4 text-gray-500">{{ $sub->submitted_at?->format('d M Y H:i') ?? '-' }}</td>
-                            <td class="py-2">
+                            <td class="py-2 pr-4">
                                 <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $sub->status_color }}-100 text-{{ $sub->status_color }}-700">
                                     {{ $sub->status_label }}
                                 </span>
+                            </td>
+                            <td class="py-2">
+                                @if($sub->status === 'submitted' && $sub->approval_status === 'pending_approval' && in_array(auth()->user()->role, ['super_admin','k3_manager','k3_officer','dept_head']))
+                                <div class="flex items-center gap-2" x-data="{ open: false }">
+                                    <form action="{{ route('monitoring-forms.submissions.approve', [$monitoringForm, $sub]) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700">Setujui</button>
+                                    </form>
+                                    <button @click="open = !open" class="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded hover:bg-red-600">Tolak</button>
+                                    <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-sm shadow-xl">
+                                            <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-3">Tolak Submission</h4>
+                                            <form action="{{ route('monitoring-forms.submissions.reject', [$monitoringForm, $sub]) }}" method="POST">
+                                                @csrf
+                                                <textarea name="review_notes" rows="3" placeholder="Alasan penolakan (opsional)" class="w-full text-sm rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900/50 px-3 py-2 dark:text-white mb-3"></textarea>
+                                                <div class="flex gap-2 justify-end">
+                                                    <button type="button" @click="open = false" class="px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded">Batal</button>
+                                                    <button type="submit" class="px-3 py-1.5 text-xs text-white bg-red-500 rounded hover:bg-red-600">Konfirmasi Tolak</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                @elseif($sub->approval_status)
+                                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $sub->approval_status_color }}-100 text-{{ $sub->approval_status_color }}-700">
+                                    {{ $sub->approval_status_label }}
+                                </span>
+                                @if($sub->review_notes)
+                                <p class="text-xs text-gray-400 mt-0.5 italic">{{ $sub->review_notes }}</p>
+                                @endif
+                                @else
+                                <span class="text-xs text-gray-400">-</span>
+                                @endif
                             </td>
                         </tr>
                         @endforeach
@@ -178,6 +212,8 @@
                         <option value="weekly">Mingguan</option>
                         <option value="monthly">Bulanan</option>
                         <option value="once">Sekali</option>
+                        <option value="per_event">Per Kejadian</option>
+                        <option value="ad_hoc">Ad Hoc</option>
                     </select>
                 </div>
 

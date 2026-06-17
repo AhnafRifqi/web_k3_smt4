@@ -10,11 +10,13 @@ class FormSubmission extends Model
     protected $fillable = [
         'form_id', 'assignment_id', 'submitted_by', 'department_id',
         'submitted_at', 'data', 'status',
+        'reviewed_by', 'reviewed_at', 'approval_status', 'review_notes',
     ];
 
     protected $casts = [
         'data' => 'array',
         'submitted_at' => 'datetime',
+        'reviewed_at' => 'datetime',
     ];
 
     public function form(): BelongsTo
@@ -37,6 +39,11 @@ class FormSubmission extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
@@ -51,6 +58,26 @@ class FormSubmission extends Model
         return match ($this->status) {
             'submitted' => 'green',
             'draft' => 'yellow',
+            default => 'gray',
+        };
+    }
+
+    public function getApprovalStatusLabelAttribute(): string
+    {
+        return match ($this->approval_status) {
+            'pending_approval' => 'Menunggu Persetujuan',
+            'approved' => 'Disetujui',
+            'rejected' => 'Ditolak',
+            default => '-',
+        };
+    }
+
+    public function getApprovalStatusColorAttribute(): string
+    {
+        return match ($this->approval_status) {
+            'pending_approval' => 'yellow',
+            'approved' => 'green',
+            'rejected' => 'red',
             default => 'gray',
         };
     }

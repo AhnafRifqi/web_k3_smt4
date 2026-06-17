@@ -57,10 +57,11 @@ class IncidentController extends Controller
             'injured_persons'        => 'nullable',
             'witnesses'              => 'nullable',
             'immediate_action_taken' => 'nullable',
+            'immediate_cause'        => 'nullable',
             'capa_required'          => 'boolean',
         ]);
 
-        $data['incident_number'] = 'INC-' . date('Ymd') . '-' . str_pad(Incident::withTrashed()->count() + 1, 4, '0', STR_PAD_LEFT);
+        $data['incident_number'] = 'INC-' . date('Ymd') . '-' . str_pad(Incident::count() + 1, 4, '0', STR_PAD_LEFT);
         $data['reported_by'] = auth()->id();
         $data['status'] = 'reported';
         $data['capa_required'] = $request->boolean('capa_required');
@@ -106,6 +107,7 @@ class IncidentController extends Controller
             'injured_persons'        => 'nullable',
             'witnesses'              => 'nullable',
             'immediate_action_taken' => 'nullable',
+            'immediate_cause'        => 'nullable',
             'status'                 => 'required|in:reported,under_investigation,corrective_action,closed',
             'root_cause'             => 'nullable',
             'lesson_learned'         => 'nullable',

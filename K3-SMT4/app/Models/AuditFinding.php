@@ -10,7 +10,7 @@ class AuditFinding extends Model
     use HasFactory;
 
     protected $fillable = [
-        'audit_id', 'finding_number', 'description', 'severity',
+        'audit_id', 'finding_number', 'description', 'severity', 'finding_type',
         'area', 'standard_ref', 'recommendation', 'status',
     ];
 
@@ -34,6 +34,26 @@ class AuditFinding extends Model
             'major'    => 'orange',
             'critical' => 'red',
             default    => 'gray',
+        };
+    }
+
+    public function getFindingTypeLabelAttribute(): string
+    {
+        return match($this->finding_type) {
+            'non_conformance' => 'Ketidaksesuaian (NCR)',
+            'conformance'     => 'Kesesuaian (OFI)',
+            'observation'     => 'Observasi',
+            default           => '-',
+        };
+    }
+
+    public function getFindingTypeColorAttribute(): string
+    {
+        return match($this->finding_type) {
+            'non_conformance' => 'red',
+            'conformance'     => 'green',
+            'observation'     => 'blue',
+            default           => 'gray',
         };
     }
 }

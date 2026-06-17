@@ -58,9 +58,16 @@
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                         </div>
-                        <input type="text" name="category" value="{{ old('category') }}" required
-                            class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 pl-11 pr-4 py-3 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                            placeholder="hiradc, kebijakan_k3, apd">
+                        <select name="category" required
+                            class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 pl-11 pr-10 py-3 text-gray-900 dark:text-slate-100 outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer">
+                            <option value="">Pilih kategori...</option>
+                            @foreach(\App\Models\K3Document::categoryOptions() as $value => $label)
+                            <option value="{{ $value }}" {{ old('category') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
                     </div>
                     @error('category') <p class="text-xs text-red-500 mt-1.5 ml-1">{{ $message }}</p> @enderror
                 </div>
@@ -158,4 +165,15 @@
         </form>
     </div>
 </div>
+@push('scripts')
+<script>
+document.querySelector('input[type="file"][name="file"]')?.addEventListener('change', function() {
+    const maxBytes = 50 * 1024 * 1024;
+    if (this.files[0] && this.files[0].size > maxBytes) {
+        alert('File melebihi batas 50 MB. Silakan pilih file yang lebih kecil.');
+        this.value = '';
+    }
+});
+</script>
+@endpush
 @endsection

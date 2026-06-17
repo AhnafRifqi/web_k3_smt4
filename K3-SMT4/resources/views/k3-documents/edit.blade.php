@@ -33,7 +33,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="form-label">Kategori</label>
-                    <input type="text" name="category" value="{{ old('category', $k3Document->category) }}" class="form-input" required>
+                    <select name="category" class="form-input" required>
+                        <option value="">Pilih kategori...</option>
+                        @foreach(\App\Models\K3Document::categoryOptions() as $value => $label)
+                        <option value="{{ $value }}" {{ old('category', $k3Document->category) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
                     @error('category') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
@@ -94,4 +99,15 @@
         </form>
     </div>
 </div>
+@push('scripts')
+<script>
+document.querySelector('input[type="file"][name="file"]')?.addEventListener('change', function() {
+    const maxBytes = 50 * 1024 * 1024;
+    if (this.files[0] && this.files[0].size > maxBytes) {
+        alert('File melebihi batas 50 MB. Silakan pilih file yang lebih kecil.');
+        this.value = '';
+    }
+});
+</script>
+@endpush
 @endsection
