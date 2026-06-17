@@ -37,10 +37,11 @@
     @endif
 @endif
 
-{{-- Dashboard Filters (GAP 8) --}}
-{{-- Interactive Filters with Live Preview --}}
+{{-- Dashboard Dinamis dengan Alpine.js Live Data --}}
+<div x-data="dashboardApp()" x-init="initDashboard()" class="space-y-6">
+
 @if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))
-<div x-data="{ showFilters: false, activeTab: 'overview' }" class="mb-6">
+<div class="mb-6">
     <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
             <button @click="activeTab = 'overview'" class="px-4 py-2 text-sm font-medium rounded-lg transition-colors" :class="activeTab === 'overview' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">Overview</button>
@@ -473,8 +474,58 @@
 
 @endsection
 
+</div> {{-- close dashboardApp container --}}
+
 @push('scripts')
 <script>
+function dashboardApp() {
+    return {
+        showFilters: false,
+        activeTab: 'overview',
+        loading: false,
+        stats: { safe_days: 0, total_employees: 0, total_sops: 0, open_incidents: 0, sop_compliance: 0, open_capa: 0, overdue_capa: 0, documents_expiring_soon: 0 },
+        recentIncidents: [],
+        overdueCapa: [],
+
+        initDashboard() {
+            // Auto refresh every 60 seconds
+            setInterval(() => { this.fetchData(); }, 60000);
+        },
+
+        applyFilters() {
+            const params = new URLSearchParams(window.location.search);
+            this.fetchData(params.toString());
+        },
+
+        fetchData(queryString) {
+            this.loading = true;
+            const url = '{{ route('dashboard.data') }}' + (queryString ? '?' + queryString : '');
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.stats) this.stats = data.stats;
+                    if (data.recentIncidents) this.recentIncidents = data.recentIncidents;
+                    if (data.overdueCapa) this.overdueCapa = data.overdueCapa;
+                    if (data.complianceChart) {
+                        this.complianceChart = data.complianceChart;
+                        this.capaByStatus = data.capaByStatus;
+                        this.findingsBySeverity = data.findingsBySeverity;
+                        this.incidentChartData = data.incidentChartData;
+                        this.typeLabels = data.typeLabels;
+                        this.reCharts();
+                    }
+                    this.loading = false;
+                })
+                .catch(() => { this.loading = false; });
+        },
+
+        reCharts() {
+            // Destroy and re-create charts if they exist
+            window.dispatchEvent(new CustomEvent('dashboard-data-updated'));
+        }
+    };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const isDark = document.documentElement.classList.contains('dark');
     const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';

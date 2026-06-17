@@ -20,6 +20,164 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class DashboardController extends Controller
 {
+    public function dashboardData(Request $request)
+    {
+        $user = auth()->user();
+
+        $departmentId = $request->department_id;
+        $dateFrom = $request->date_from;
+        $dateTo = $request->date_to;
+        $period = (int) ($request->period ?? 6);
+
+        // For dept_head: auto-scope to their department
+        if ($user->isDeptHead() && $user->employee) {
+            $departmentId = $user->employee->department_id;
+        }
+
+        // Build base query scopes
+        $empQuery = Employee::where('status', 'aktif');
+        $sopQuery = Sop::where('status', 'aktif');
+        $incidentQuery = Incident::query();
+        $docQuery = K3Document::query();
+
+        // Apply department filter
+        if ($departmentId) {
+            $empQuery->where('department_id', $departmentId);
+            $incidentQuery->where('department_id', $departmentId);
+        }
+
+        // Apply date range filter
+        if ($dateFrom) {
+            $incidentQuery->whereDate('incident_date', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $incidentQuery->whereDate('incident_date', '<=', $dateTo);
+        }
+
+        // Stats
+        $lastLti = Incident::where('incident_type', 'lost_time_injury')
+            ->where('status', 'closed')
+            ->orderBy('incident_date', 'desc')
+            ->first();
+        $safeDays = $lastLti ? $lastLti->incident_date->diffInDays(now()) : 365;
+
+        $capaStats = Capa::selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $capaByStatus = [
+            'open'        => $capaStats['open'] ?? 0,
+            'in_progress' => $capaStats['in_progress'] ?? 0,
+            'closed'      => $capaStats['closed'] ?? 0,
+        ];
+
+        $findingsBySeverity = [
+            'minor'    => AuditFinding::where('severity', 'minor')->count(),
+            'major'    => AuditFinding::where('severity', 'major')->count(),
+            'critical' => AuditFinding::where('severity', 'critical')->count(),
+        ];
+
+        // Monthly Compliance
+        $monthlyCompliance = [];
+        for ($i = $period - 1; $i >= 0; $i--) {
+            $m    = Carbon::now()->subMonths($i);
+            $exec = SopExecution::whereYear('execution_date', $m->year)
+                ->whereMonth('execution_date', $m->month)->get();
+            $tot  = $exec->count();
+            $monthlyCompliance[] = [
+                'month'      => $m->translatedFormat('M Y'),
+                'compliance' => $tot > 0 ? round(($exec->where('status', 'sesuai')->count() / $tot) * 100, 1) : 0,
+                'total'      => $tot,
+            ];
+        }
+
+        // Incident Chart Data
+        $incidentChartData = [];
+        $incidentTypes = ['near_miss', 'first_aid', 'medical_treatment', 'lost_time_injury', 'fatality', 'property_damage', 'environmental'];
+        $typeLabels = [
+            'near_miss' => 'Near Miss', 'first_aid' => 'First Aid', 'medical_treatment' => 'Medical',
+            'lost_time_injury' => 'LTI', 'fatality' => 'Fatality', 'property_damage' => 'Property', 'environmental' => 'Env',
+        ];
+
+        for ($i = $period - 1; $i >= 0; $i--) {
+            $m = Carbon::now()->subMonths($i);
+            $monthLabel = $m->translatedFormat('M Y');
+            $row = ['month' => $monthLabel];
+            foreach ($incidentTypes as $type) {
+                $count = Incident::where('incident_type', $type)
+                    ->whereYear('incident_date', $m->year)
+                    ->whereMonth('incident_date', $m->month)
+                    ->count();
+                $row[$type] = $count;
+            }
+            $incidentChartData[] = $row;
+        }
+
+        // Recent incidents
+        $recentIncidents = Incident::with(['department', 'reporter'])
+            ->where('status', '!=', 'closed')
+            ->latest('incident_date')
+            ->take(5)->get()->map(function($inc) {
+                return [
+                    'id' => $inc->id,
+                    'incident_number' => $inc->incident_number,
+                    'title' => $inc->title,
+                    'incident_type_label' => $inc->incident_type_label,
+                    'status_label' => $inc->status_label,
+                    'status_color' => $inc->status_color,
+                    'severity_color' => $inc->severity_color,
+                    'url' => route('incidents.show', $inc),
+                ];
+            });
+
+        // Overdue CAPA
+        $overdueCapa = Capa::with(['pic', 'audit'])
+            ->where('status', '!=', 'closed')
+            ->where('target_date', '<', now())
+            ->latest()->take(5)->get()->map(function($capa) {
+                return [
+                    'id' => $capa->id,
+                    'capa_number' => $capa->capa_number,
+                    'description' => $capa->description,
+                    'pic_name' => $capa->pic?->name ?? '-',
+                    'target_date' => $capa->target_date->format('d M Y'),
+                ];
+            });
+
+        // SOP Compliance
+        $thisMonth = Carbon::now();
+        $execThisMonth = SopExecution::whereYear('execution_date', $thisMonth->year)
+            ->whereMonth('execution_date', $thisMonth->month)->get();
+        $totalExec = $execThisMonth->count();
+        $sopCompliance = $totalExec > 0
+            ? round(($execThisMonth->where('status', 'sesuai')->count() / $totalExec) * 100, 1)
+            : 0;
+
+        return response()->json([
+            'stats' => [
+                'safe_days' => $safeDays,
+                'total_employees' => $empQuery->count(),
+                'total_sops' => $sopQuery->count(),
+                'open_incidents' => Incident::where('status', '!=', 'closed')->count(),
+                'sop_compliance' => $sopCompliance,
+                'open_capa' => $capaStats['open'] ?? 0,
+                'overdue_capa' => Capa::where('status', '!=', 'closed')->where('target_date', '<', now())->count(),
+                'documents_expiring_soon' => K3Document::where('workflow_status', 'approved')
+                    ->whereNotNull('review_due_date')
+                    ->whereDate('review_due_date', '>=', now())
+                    ->whereDate('review_due_date', '<=', now()->addDays(30))
+                    ->count(),
+            ],
+            'complianceChart' => $monthlyCompliance,
+            'capaByStatus' => $capaByStatus,
+            'findingsBySeverity' => $findingsBySeverity,
+            'incidentChartData' => $incidentChartData,
+            'typeLabels' => $typeLabels,
+            'recentIncidents' => $recentIncidents,
+            'overdueCapa' => $overdueCapa,
+        ]);
+    }
+
     public function index(Request $request)
     {
         $user = auth()->user();
