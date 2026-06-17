@@ -43,6 +43,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/data', [DashboardController::class, 'dashboardData'])->name('dashboard.data');
         Route::middleware('role:super_admin,k3_manager,k3_officer')->group(function () {
             Route::get('/dashboard/export-pdf', [DashboardController::class, 'exportPdf'])->name('dashboard.export-pdf');
             Route::get('/dashboard/export-excel', [DashboardController::class, 'exportExcel'])->name('dashboard.export-excel');
