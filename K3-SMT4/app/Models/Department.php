@@ -4,14 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Department extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
-    protected $fillable = ['name', 'code', 'description', 'is_active'];
+    protected $fillable = ['name', 'code', 'description', 'is_active', 'division_id'];
     protected $casts = ['is_active' => 'boolean'];
+
+    public function scopeActive($query)
+    {
+        return $query->whereRaw('is_active IS TRUE');
+    }
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
 
     public function employees()
     {

@@ -53,7 +53,7 @@ class AuditController extends Controller
 
     public function show(Audit $audit)
     {
-        $audit->load(['findings.capa', 'capas.pic', 'creator']);
+        $audit->load(['findings.capa', 'capas.pic', 'creator', 'checklistItems']);
         return view('audits.show', compact('audit'));
     }
 
@@ -93,5 +93,12 @@ class AuditController extends Controller
         $audit->load(['findings.capa', 'creator']);
         $pdf = Pdf::loadView('audits.pdf', compact('audit'))->setPaper('a4');
         return $pdf->download("laporan-audit-{$audit->audit_number}.pdf");
+    }
+
+    public function exportEvidencePackage(Audit $audit)
+    {
+        $audit->load(['findings', 'capas.pic', 'creator', 'documents']);
+        $pdf = Pdf::loadView('audits.evidence-package', compact('audit'))->setPaper('a4');
+        return $pdf->download("evidence-package-{$audit->audit_number}.pdf");
     }
 }

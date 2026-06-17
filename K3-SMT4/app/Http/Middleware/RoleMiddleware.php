@@ -21,6 +21,12 @@ class RoleMiddleware
             return redirect()->route('login')->with('error', 'Akun Anda telah dinonaktifkan.');
         }
 
+        // super_admin has access to everything
+        if ($user->role === 'super_admin') {
+            return $next($request);
+        }
+
+        // Check if user has one of the required roles
         if (!in_array($user->role, $roles)) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }

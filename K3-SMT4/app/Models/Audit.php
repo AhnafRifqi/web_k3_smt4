@@ -4,11 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Audit extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'audit_number', 'type', 'audit_date', 'audit_date_end',
@@ -25,6 +24,8 @@ class Audit extends Model
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
     public function findings() { return $this->hasMany(AuditFinding::class); }
     public function capas() { return $this->hasMany(Capa::class); }
+    public function checklistItems() { return $this->hasMany(AuditChecklistItem::class); }
+    public function documents() { return $this->hasMany(K3Document::class, 'uploaded_by', 'created_by'); }
 
     public function getTypeLabelAttribute(): string
     {

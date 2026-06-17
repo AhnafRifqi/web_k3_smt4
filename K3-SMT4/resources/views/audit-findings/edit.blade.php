@@ -30,6 +30,16 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                    <label class="form-label">Tipe Temuan</label>
+                    <select name="finding_type" class="form-input" required>
+                        <option value="non_conformance" {{ old('finding_type', $auditFinding->finding_type) == 'non_conformance' ? 'selected' : '' }}>Ketidaksesuaian (NCR)</option>
+                        <option value="conformance" {{ old('finding_type', $auditFinding->finding_type) == 'conformance' ? 'selected' : '' }}>Kesesuaian (OFI)</option>
+                        <option value="observation" {{ old('finding_type', $auditFinding->finding_type) == 'observation' ? 'selected' : '' }}>Observasi</option>
+                    </select>
+                    @error('finding_type') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
                     <label class="form-label">Tingkat</label>
                     <select name="severity" class="form-input" required>
                         <option value="minor" {{ old('severity', $auditFinding->severity) == 'minor' ? 'selected' : '' }}>Minor</option>

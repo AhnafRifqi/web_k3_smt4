@@ -33,7 +33,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="form-label">Kategori</label>
-                    <input type="text" name="category" value="{{ old('category', $k3Document->category) }}" class="form-input" required>
+                    <select name="category" class="form-input" required>
+                        <option value="">Pilih kategori...</option>
+                        @foreach(\App\Models\K3Document::categoryOptions() as $value => $label)
+                        <option value="{{ $value }}" {{ old('category', $k3Document->category) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
                     @error('category') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
@@ -60,12 +65,31 @@
             </div>
 
             <div>
-                <label class="form-label">Upload PDF Baru</label>
-                <input type="file" name="file" accept="application/pdf" class="form-input">
+                <label class="form-label">Upload File Baru</label>
+                <input type="file" name="file" accept=".pdf,.doc,.docx,.xlsx,.jpg,.jpeg,.png" class="form-input">
                 @error('file') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                <p class="text-xs text-gray-400 mt-1">Maksimal 50 MB. Format: PDF, DOC, DOCX, XLSX, JPG, PNG.</p>
                 @if($k3Document->file_url)
-                <p class="text-xs text-gray-400 mt-2">File saat ini tersedia <a href="{{ $k3Document->file_url }}" class="text-blue-600 hover:underline">Lihat PDF</a>.</p>
+                <p class="text-xs text-gray-400 mt-2">File saat ini tersedia <a href="{{ $k3Document->file_url }}" class="text-blue-600 hover:underline" target="_blank">Lihat file</a>.</p>
                 @endif
+            </div>
+
+            <div x-data="{ visibility: '{{ old('visibility', $k3Document->visibility ?? 'public') }}' }">
+                <label class="form-label">Visibilitas</label>
+                <select name="visibility" x-model="visibility" class="form-input" required>
+                    <option value="public">Publik (semua role)</option>
+                    <option value="restricted">Terbatas (departemen tertentu)</option>
+                </select>
+
+                <div x-show="visibility === 'restricted'" class="mt-4">
+                    <label class="form-label">Departemen yang Diizinkan</label>
+                    <select name="allowed_departments[]" multiple size="5" class="form-input">
+                        @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}" {{ in_array($dept->id, old('allowed_departments', $k3Document->allowed_departments ?? [])) ? 'selected' : '' }}>{{ $dept->name }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Tahan Ctrl/Cmd untuk memilih beberapa departemen.</p>
+                </div>
             </div>
 
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
@@ -75,4 +99,15 @@
         </form>
     </div>
 </div>
+@push('scripts')
+<script>
+document.querySelector('input[type="file"][name="file"]')?.addEventListener('change', function() {
+    const maxBytes = 50 * 1024 * 1024;
+    if (this.files[0] && this.files[0].size > maxBytes) {
+        alert('File melebihi batas 50 MB. Silakan pilih file yang lebih kecil.');
+        this.value = '';
+    }
+});
+</script>
+@endpush
 @endsection

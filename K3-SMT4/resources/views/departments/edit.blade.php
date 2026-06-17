@@ -29,6 +29,17 @@
                 @error('description') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             </div>
 
+            <div>
+                <label class="form-label">Divisi (Opsional)</label>
+                <select name="division_id" class="form-input">
+                    <option value="">— Tanpa Divisi —</option>
+                    @foreach($divisions as $division)
+                    <option value="{{ $division->id }}" {{ old('division_id', $department->division_id) == $division->id ? 'selected' : '' }}>{{ $division->name }}</option>
+                    @endforeach
+                </select>
+                @error('division_id') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+            </div>
+
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                 <a href="{{ route('departments.index') }}" class="btn-secondary">Batal</a>
                 <button type="submit" class="btn-primary">Perbarui Departemen</button>

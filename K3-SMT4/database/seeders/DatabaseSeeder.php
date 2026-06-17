@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password123'),
             'role'     => 'admin',
             'is_active' => true,
+            'is_validated' => true,
         ]);
 
         $supervisor = User::firstOrCreate(['email' => 'supervisor@smk3jne.com'], [
@@ -46,6 +47,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password123'),
             'role'     => 'supervisor_k3',
             'is_active' => true,
+            'is_validated' => true,
         ]);
 
         $auditor = User::firstOrCreate(['email' => 'auditor@smk3jne.com'], [
@@ -53,6 +55,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password123'),
             'role'     => 'auditor',
             'is_active' => true,
+            'is_validated' => true,
         ]);
 
         User::firstOrCreate(['email' => 'karyawan@smk3jne.com'], [
@@ -60,6 +63,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password123'),
             'role'     => 'karyawan',
             'is_active' => true,
+            'is_validated' => false,
         ]);
 
         // ===== EMPLOYEES =====

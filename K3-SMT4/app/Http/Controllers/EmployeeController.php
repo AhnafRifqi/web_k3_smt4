@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\User;
 use App\Exports\EmployeesExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -13,6 +14,21 @@ class EmployeeController extends Controller
 {
     public function index(Request $request)
     {
+        $tab = $request->tab ?? 'active';
+
+        if ($tab === 'pending') {
+            // Ambil semua user yang belum divalidasi (termasuk karyawan dengan is_validated=false)
+            $pendingUsers = User::where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
+                ->latest()
+                ->paginate(15, ['*'], 'page')
+                ->withQueryString();
+
+            $employees = collect(); // empty collection for active tab data
+            $departments = Department::active()->get();
+
+            return view('employees.index', compact('employees', 'departments', 'pendingUsers', 'tab'));
+        }
+
         $query = Employee::with('department');
 
         if ($request->search) {
@@ -30,15 +46,57 @@ class EmployeeController extends Controller
         }
 
         $employees   = $query->latest()->paginate(15)->withQueryString();
-        $departments = Department::where('is_active', true)->get();
+        $departments = Department::active()->get();
 
-        return view('employees.index', compact('employees', 'departments'));
+        // Ambil semua user yang belum divalidasi (untuk tab pending)
+        $pendingUsers = User::where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
+            ->latest()
+            ->paginate(15, ['*'], 'page_pending')
+            ->withQueryString();
+
+        return view('employees.index', compact('employees', 'departments', 'pendingUsers', 'tab'));
+    }
+
+    /**
+     * Approve pending user -> menjadi karyawan
+     */
+    public function approvePending(Request $request, User $user)
+    {
+        // Jika role masih 'employee' dan belum divalidasi, validasi
+        if ($user->role === 'employee' && !$user->is_validated) {
+            $user->update([
+                'is_validated' => true,
+            ]);
+        } else {
+            // Jika sudah punya role lain, cukup validasi
+            $user->update(['is_validated' => true]);
+        }
+
+        return redirect()->route('employees.create', ['user_id' => $user->id])
+            ->with('success', 'User ' . $user->name . ' berhasil disetujui. Silakan lengkapi data karyawan.');
+    }
+
+    /**
+     * Reject pending user
+     */
+    public function rejectPending(Request $request, User $user)
+    {
+        if ($user->is_validated) {
+            return back()->with('error', 'User ini sudah divalidasi.');
+        }
+
+        $name = $user->name;
+        $user->delete();
+
+        return redirect()->route('employees.index', ['tab' => 'pending'])
+            ->with('success', 'User ' . $name . ' ditolak dan dihapus dari sistem.');
     }
 
     public function create()
     {
-        $departments = Department::where('is_active', true)->get();
-        return view('employees.create', compact('departments'));
+        $departments = Department::active()->get();
+        $pendingUsers = User::where('is_validated', false)->get();
+        return view('employees.create', compact('departments', 'pendingUsers'));
     }
 
     public function store(Request $request)
@@ -53,6 +111,7 @@ class EmployeeController extends Controller
             'join_date'     => 'required|date',
             'status'        => 'required|in:aktif,tidak_aktif,cuti,resign',
             'photo'         => 'nullable|image|max:2048',
+            'user_id'       => 'nullable|exists:users,id',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -63,7 +122,16 @@ class EmployeeController extends Controller
         }
         unset($data['photo']);
 
+        // Ensure email is set if user_id is provided
+        if ($request->user_id && empty($data['email'])) {
+            $user = User::find($request->user_id);
+            if ($user) {
+                $data['email'] = $user->email;
+            }
+        }
+
         Employee::create($data);
+
         return redirect()->route('employees.index')->with('success', 'Karyawan berhasil ditambahkan.');
     }
 
@@ -75,7 +143,7 @@ class EmployeeController extends Controller
 
     public function edit(Employee $employee)
     {
-        $departments = Department::where('is_active', true)->get();
+        $departments = Department::active()->get();
         return view('employees.edit', compact('employee', 'departments'));
     }
 
@@ -125,5 +193,127 @@ class EmployeeController extends Controller
 
         $pdf = Pdf::loadView('employees.pdf', compact('employees'))->setPaper('a4', 'landscape');
         return $pdf->download('karyawan-' . now()->format('Ymd') . '.pdf');
+    }
+
+    // ==========================================
+    // DATA KARYAWAN MANDIRI (Untuk Role Karyawan)
+    // ==========================================
+
+    public function myEmployee()
+    {
+        if (!auth()->user()->is_validated) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda belum divalidasi oleh Admin.');
+        }
+
+        $employee = auth()->user()->employee;
+        if (!$employee) {
+            return redirect()->route('my-employee.create')->with('info', 'Silakan lengkapi data karyawan Anda terlebih dahulu.');
+        }
+
+        $employee->load(['department', 'sopExecutions.sop', 'capas']);
+        return view('employees.my', compact('employee'));
+    }
+
+    public function createMyEmployee()
+    {
+        if (!auth()->user()->is_validated) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda belum divalidasi oleh Admin.');
+        }
+
+        if (auth()->user()->employee) {
+            return redirect()->route('my-employee')->with('error', 'Anda sudah melengkapi data diri.');
+        }
+
+        $departments = Department::active()->get();
+        return view('employees.edit_my', [
+            'employee' => null,
+            'departments' => $departments
+        ]);
+    }
+
+    public function storeMyEmployee(Request $request)
+    {
+        if (!auth()->user()->is_validated) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda belum divalidasi oleh Admin.');
+        }
+
+        if (auth()->user()->employee) {
+            return redirect()->route('my-employee')->with('error', 'Anda sudah melengkapi data diri.');
+        }
+
+        $data = $request->validate([
+            'nik'           => 'required|unique:employees,nik|max:20',
+            'name'          => 'required|max:100',
+            'position'      => 'required|max:100',
+            'department_id' => 'required|exists:departments,id',
+            'phone'         => 'nullable|max:20',
+            'join_date'     => 'required|date',
+            'photo'         => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('photo')) {
+            $result = cloudinary()->upload($request->file('photo')->getRealPath(), [
+                'folder' => 'smk3-jne/employees',
+            ]);
+            $data['photo_url'] = $result->getSecurePath();
+        }
+        unset($data['photo']);
+
+        $data['email'] = auth()->user()->email;
+        $data['status'] = 'aktif';
+        $data['user_id'] = auth()->id();
+
+        Employee::create($data);
+
+        return redirect()->route('my-employee')->with('success', 'Data karyawan Anda berhasil disimpan.');
+    }
+
+    public function editMyEmployee()
+    {
+        if (!auth()->user()->is_validated) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda belum divalidasi oleh Admin.');
+        }
+
+        $employee = auth()->user()->employee;
+        if (!$employee) {
+            return redirect()->route('my-employee.create')->with('info', 'Silakan lengkapi data karyawan Anda terlebih dahulu.');
+        }
+
+        $departments = Department::active()->get();
+        return view('employees.edit_my', compact('employee', 'departments'));
+    }
+
+    public function updateMyEmployee(Request $request)
+    {
+        if (!auth()->user()->is_validated) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda belum divalidasi oleh Admin.');
+        }
+
+        $employee = auth()->user()->employee;
+        if (!$employee) {
+            return redirect()->route('my-employee.create')->with('info', 'Silakan lengkapi data karyawan Anda terlebih dahulu.');
+        }
+
+        $data = $request->validate([
+            'nik'           => 'required|max:20|unique:employees,nik,' . $employee->id,
+            'name'          => 'required|max:100',
+            'position'      => 'required|max:100',
+            'department_id' => 'required|exists:departments,id',
+            'phone'         => 'nullable|max:20',
+            'join_date'     => 'required|date',
+            'photo'         => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('photo')) {
+            $result = cloudinary()->upload($request->file('photo')->getRealPath(), [
+                'folder' => 'smk3-jne/employees',
+            ]);
+            $data['photo_url'] = $result->getSecurePath();
+        }
+        unset($data['photo']);
+
+        $employee->update($data);
+
+        return redirect()->route('my-employee')->with('success', 'Data karyawan Anda berhasil diperbarui.');
     }
 }
