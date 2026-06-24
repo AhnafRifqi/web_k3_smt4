@@ -96,11 +96,11 @@ return [
         'prefix' => '',
         'prefix_indexes' => true,
         'search_path' => 'public',
-        'sslmode' => env('DB_SSLMODE', 'prefer'),
+        'sslmode' => env('DB_SSLMODE', 'require'),  // ubah 'prefer' → 'require'
         'options' => [
-            PDO::ATTR_EMULATE_PREPARES => false,
-            ],
+            PDO::ATTR_EMULATE_PREPARES => true,  // ubah false → true
         ],
+    ],
 
         'sqlsrv' => [
             'driver' => 'sqlsrv',
