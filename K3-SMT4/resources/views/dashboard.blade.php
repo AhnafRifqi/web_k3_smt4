@@ -86,30 +86,42 @@
 
 {{-- Animated Stats Cards with Hover Effects --}}
 <div x-data="{
-    safeDays: 0,
-    totalEmployees: 0,
-    totalSops: 0,
-    openIncidents: 0,
-    init() {
-        animateCounter('safeDays', {{ $stats['safe_days'] ?? 0 }}, 2000);
-        animateCounter('totalEmployees', {{ $stats['total_employees'] ?? 0 }}, 2000);
-        animateCounter('totalSops', {{ $stats['total_sops'] ?? 0 }}, 2000);
-        animateCounter('openIncidents', {{ $stats['open_incidents'] ?? 0 }}, 2000);
-    },
-    animateCounter(prop, target, duration) {
-        let start = 0;
-        const step = Math.ceil(target / (duration / 16));
-        const timer = setInterval(() => {
-            start += step;
-            if (start >= target) {
-                this[prop] = target;
-                clearInterval(timer);
-            } else {
-                this[prop] = start;
+        safeDays: 0,
+        totalEmployees: 0,
+        totalSops: 0,
+        openIncidents: 0,
+
+        init() {
+            this.animateCounter('safeDays', {{ $stats['safe_days'] ?? 0 }}, 2000);
+            this.animateCounter('totalEmployees', {{ $stats['total_employees'] ?? 0 }}, 2000);
+            this.animateCounter('totalSops', {{ $stats['total_sops'] ?? 0 }}, 2000);
+            this.animateCounter('openIncidents', {{ $stats['open_incidents'] ?? 0 }}, 2000);
+        },
+
+        animateCounter(prop, target, duration = 2000) {
+            let start = 0;
+
+            if (target <= 0) {
+                this[prop] = 0;
+                return;
             }
-        }, 16);
-    }
-}" x-init="init()" class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
+
+            const step = Math.ceil(target / (duration / 16));
+
+            const timer = setInterval(() => {
+                start += step;
+
+                if (start >= target) {
+                    this[prop] = target;
+                    clearInterval(timer);
+                } else {
+                    this[prop] = start;
+                }
+            }, 16);
+        }
+    }"
+    x-init="init()"
+    class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
 
     <div class="group bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
         x-on:click="window.location.href='{{ route('incidents.index') }}'">
