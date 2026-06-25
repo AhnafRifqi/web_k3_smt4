@@ -67,6 +67,9 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/sop/{sop}', [SopController::class, 'destroy'])->name('sops.destroy');
         });
         Route::get('/sop/{sop}', [SopController::class, 'show'])->name('sops.show');
+        // SOP file download & stream proxy (accessible by all validated users)
+        Route::get('/sop/{sop}/download', [SopController::class, 'download'])->name('sops.download');
+        Route::get('/sop/{sop}/stream', [SopController::class, 'stream'])->name('sops.stream');
 
         // ---- Dokumen K3 ----
         Route::get('/k3-documents', [K3DocumentController::class, 'index'])->name('k3-documents.index');
