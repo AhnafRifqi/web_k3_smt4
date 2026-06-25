@@ -17,13 +17,12 @@ class EmployeeController extends Controller
         $tab = $request->tab ?? 'active';
 
         if ($tab === 'pending') {
-            // Ambil semua user yang belum divalidasi (termasuk karyawan dengan is_validated=false)
-            $pendingUsers = User::where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
+            $pendingUsers = User::whereRaw('"is_validated" = false')
                 ->latest()
                 ->paginate(15, ['*'], 'page')
                 ->withQueryString();
 
-            $employees = collect(); // empty collection for active tab data
+            $employees = collect();
             $departments = Department::active()->get();
 
             return view('employees.index', compact('employees', 'departments', 'pendingUsers', 'tab'));
@@ -48,8 +47,7 @@ class EmployeeController extends Controller
         $employees   = $query->latest()->paginate(15)->withQueryString();
         $departments = Department::active()->get();
 
-        // Ambil semua user yang belum divalidasi (untuk tab pending)
-        $pendingUsers = User::where('is_validated', \Illuminate\Support\Facades\DB::raw('false'))
+        $pendingUsers = User::whereRaw('"is_validated" = false')
             ->latest()
             ->paginate(15, ['*'], 'page_pending')
             ->withQueryString();
@@ -62,13 +60,11 @@ class EmployeeController extends Controller
      */
     public function approvePending(Request $request, User $user)
     {
-        // Jika role masih 'employee' dan belum divalidasi, validasi
         if ($user->role === 'employee' && !$user->is_validated) {
             $user->update([
                 'is_validated' => true,
             ]);
         } else {
-            // Jika sudah punya role lain, cukup validasi
             $user->update(['is_validated' => true]);
         }
 
@@ -95,7 +91,7 @@ class EmployeeController extends Controller
     public function create()
     {
         $departments = Department::active()->get();
-        $pendingUsers = User::where('is_validated', false)->get();
+        $pendingUsers = User::whereRaw('"is_validated" = false')->get();
         return view('employees.create', compact('departments', 'pendingUsers'));
     }
 
@@ -122,7 +118,6 @@ class EmployeeController extends Controller
         }
         unset($data['photo']);
 
-        // Ensure email is set if user_id is provided
         if ($request->user_id && empty($data['email'])) {
             $user = User::find($request->user_id);
             if ($user) {
