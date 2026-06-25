@@ -34,7 +34,7 @@
         <div class="h-full px-3 py-4 overflow-y-auto pb-24">
             <ul class="space-y-1">
 
-                {{-- Dashboard --}}
+                {{-- Dashboard (Semua Bisa Lihat) --}}
                 <li>
                     <a href="{{ route('dashboard') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -44,6 +44,8 @@
                     </a>
                 </li>
 
+                {{-- Sembunyikan Incidents & HIRARC dari Viewer --}}
+                @if(auth()->check() && auth()->user()->role !== 'viewer')
                 {{-- Incidents --}}
                 <li>
                     <a href="{{ route('incidents.index') }}"
@@ -67,6 +69,7 @@
                         HIRARC
                     </a>
                 </li>
+                @endif
 
                 {{-- Karyawan --}}
                 @if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))
@@ -96,7 +99,7 @@
                     <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-500">Dokumen & SOP</p>
                 </li>
 
-                {{-- SOP --}}
+                {{-- SOP (Semua Bisa Lihat) --}}
                 <li>
                     <a href="{{ route('sops.index') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -106,7 +109,7 @@
                     </a>
                 </li>
 
-                {{-- Dokumen K3 --}}
+                {{-- Dokumen K3 (Semua Bisa Lihat) --}}
                 <li>
                     <a href="{{ route('k3-documents.index') }}"
                         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -116,6 +119,8 @@
                     </a>
                 </li>
 
+                {{-- Sembunyikan Pelaksanaan SOP & Form dari Viewer --}}
+                @if(auth()->check() && auth()->user()->role !== 'viewer')
                 {{-- Pelaksanaan SOP --}}
                 <li>
                     <a href="{{ route('sop-executions.index') }}"
@@ -135,7 +140,10 @@
                         Form Monitoring
                     </a>
                 </li>
+                @endif
 
+                {{-- Sembunyikan bagian Audit & CAPA sepenuhnya dari Viewer --}}
+                @if(auth()->check() && auth()->user()->role !== 'viewer')
                 <li class="pt-3 pb-1">
                     <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-500">Audit & Temuan</p>
                 </li>
@@ -163,10 +171,13 @@
                         @endif
                     </a>
                 </li>
+                @endif
 
-                <li class="pt-3 pb-1">
-                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-500">Laporan & Logs</p>
-                </li>
+                @if(auth()->check() && auth()->user()->role !== 'viewer')
+<li class="pt-3 pb-1">
+    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Laporan & Logs</p>
+</li>
+@endif
 
                 {{-- Rekap --}}
                 @if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))

@@ -37,7 +37,7 @@ class SopController extends Controller
             'apd_required'   => 'nullable|array',
             'effective_date' => 'required|date',
             'category'       => 'nullable|max:100',
-            'status'         => 'required|in:aktif,revisi,tidak_aktif',
+            // VALIDASI STATUS KITA HAPUS DARI SINI
             'file'           => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
@@ -47,11 +47,13 @@ class SopController extends Controller
             ]);
             $data['file_url'] = $result->getSecurePath();
         }
-        unset($data['file']);
+        
+        // --- SISTEM OTOMATIS MEMAKSA STATUS DRAFT DI SINI ---
+        $data['status'] = 'tidak_aktif';
         $data['created_by'] = auth()->id();
 
         Sop::create($data);
-        return redirect()->route('sops.index')->with('success', 'SOP berhasil ditambahkan.');
+        return redirect()->route('sops.index')->with('success', 'SOP berhasil ditambahkan dan menunggu persetujuan (Draft).');
     }
 
     public function show(Sop $sop)
