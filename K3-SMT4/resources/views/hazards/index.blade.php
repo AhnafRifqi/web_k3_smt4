@@ -7,10 +7,13 @@
 @section('content')
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
     <div class="flex items-center gap-2">
+        {{-- Tombol HANYA muncul jika role BUKAN auditor dan BUKAN viewer --}}
+        @if(auth()->check() && !in_array(auth()->user()->role, ['auditor', 'viewer']))
         <a href="{{ route('hazards.create') }}" class="btn-primary inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             New Hazard Identification
         </a>
+        @endif
     </div>
 </div>
 
@@ -67,6 +70,7 @@
                     <td class="px-4 py-3 text-center"><span class="badge-{{ $hazard->risk_level_color }}">{{ $hazard->risk_level_label }}</span></td>
                     <td class="px-4 py-3"><span class="badge-{{ $hazard->status_color }}">{{ $hazard->status_label }}</span></td>
                     <td class="px-4 py-3">
+                        {{-- View SELALU muncul untuk semua role --}}
                         <a href="{{ route('hazards.show', $hazard) }}" class="text-blue-600 hover:underline text-xs font-medium">View</a>
                     </td>
                 </tr>

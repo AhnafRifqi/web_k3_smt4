@@ -9,7 +9,9 @@
         <h2 class="text-lg font-bold text-gray-900 dark:text-white">Daftar Audit</h2>
         <p class="text-sm text-gray-500 mt-0.5">{{ $audits->total() }} audit ditemukan</p>
     </div>
-    @if(in_array(auth()->user()->role, ['admin','auditor']))
+    
+    {{-- TOMBOL BUAT AUDIT: Hanya untuk K3 Manager --}}
+    @if(auth()->check() && auth()->user()->role === 'k3_manager')
     <a href="{{ route('audits.create') }}" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Buat Audit
@@ -83,7 +85,9 @@
                     <a href="{{ route('audits.export-pdf', $audit) }}" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Export PDF">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                     </a>
-                    @if(in_array(auth()->user()->role, ['admin','auditor']))
+                    
+                    {{-- TOMBOL EDIT AUDIT: Hanya untuk K3 Manager --}}
+                    @if(auth()->check() && auth()->user()->role === 'k3_manager')
                     <a href="{{ route('audits.edit', $audit) }}" class="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </a>

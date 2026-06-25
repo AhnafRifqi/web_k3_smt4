@@ -11,9 +11,13 @@
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Pelaksanaan SOP</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">Daftar pelaksanaan SOP karyawan.</p>
         </div>
+        
+        {{-- Tombol Tambah HANYA muncul jika role BUKAN auditor dan BUKAN viewer --}}
+        @if(auth()->check() && !in_array(auth()->user()->role, ['auditor', 'viewer']))
         <a href="{{ route('sop-executions.create') }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
             Tambah Pelaksanaan
         </a>
+        @endif
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
@@ -36,13 +40,20 @@
                         <td class="px-4 py-3">{{ $execution->employee->name ?? '-' }}</td>
                         <td class="px-4 py-3">{{ ucfirst(str_replace('_', ' ', $execution->status)) }}</td>
                         <td class="px-4 py-3 space-x-2">
+                            
+                            {{-- Tombol Lihat SELALU muncul --}}
                             <a href="{{ route('sop-executions.show', $execution) }}" class="text-blue-600 hover:underline">Lihat</a>
-                        <a href="{{ route('sop-executions.edit', $execution) }}" class="text-orange-600 hover:underline">Edit</a>
+                            
+                            {{-- Tombol Edit & Hapus disembunyikan dari auditor dan viewer --}}
+                            @if(auth()->check() && !in_array(auth()->user()->role, ['auditor', 'viewer']))
+                            <a href="{{ route('sop-executions.edit', $execution) }}" class="text-orange-600 hover:underline">Edit</a>
                             <form action="{{ route('sop-executions.destroy', $execution) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus pelaksanaan SOP ini?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-600 hover:underline">Hapus</button>
                             </form>
+                            @endif
+
                         </td>
                     </tr>
                     @empty

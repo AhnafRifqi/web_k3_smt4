@@ -20,7 +20,12 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ $k3Document->document_number }} · Revisi {{ $k3Document->revision }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                
+                {{-- HANYA Admin, Manager, dan Officer yang bisa Edit --}}
+                @if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))
                 <a href="{{ route('k3-documents.edit', $k3Document) }}" class="btn-secondary">Edit</a>
+                @endif
+                
                 <a href="{{ route('k3-documents.index') }}" class="btn-secondary">Kembali</a>
             </div>
         </div>
