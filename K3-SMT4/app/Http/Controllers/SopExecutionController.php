@@ -25,7 +25,7 @@ class SopExecutionController extends Controller
 
     public function create()
     {
-        $employees = Employee::where('status', 'aktif')->get();
+        $employees = Employee::with('department')->where('status', 'aktif')->get();
         $sops      = Sop::where('status', 'aktif')->get();
         return view('sop-executions.create', compact('employees', 'sops'));
     }
@@ -58,7 +58,7 @@ class SopExecutionController extends Controller
 
     public function edit(SopExecution $sopExecution)
     {
-        $employees = Employee::where('status', 'aktif')->get();
+        $employees = Employee::with('department')->where('status', 'aktif')->get();
         $sops      = Sop::where('status', 'aktif')->get();
         return view('sop-executions.edit', compact('sopExecution', 'employees', 'sops'));
     }

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\ActivityLogService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MonitoringFormController extends Controller
 {
@@ -33,7 +34,8 @@ class MonitoringFormController extends Controller
         }
 
         if ($request->has('is_active') && $request->is_active !== '') {
-            $query->where('is_active', $request->boolean('is_active'));
+            $isActive = $request->boolean('is_active');
+            $query->whereRaw('"is_active" = ' . ($isActive ? 'true' : 'false'));
         }
 
         if (! auth()->user()->canManage()) {
@@ -74,34 +76,37 @@ class MonitoringFormController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title' => 'required|max:200',
-            'description' => 'nullable|string',
-            'department_id' => 'nullable|exists:departments,id',
-            'is_active' => 'boolean',
-            'fields' => 'required|array|min:1',
-            'fields.*.field_type' => 'required|in:' . self::FIELD_TYPES,
-            'fields.*.label' => 'required|max:200',
-            'fields.*.options' => 'nullable|array',
+            'title'                => 'required|max:200',
+            'description'          => 'nullable|string',
+            'department_id'        => 'nullable|exists:departments,id',
+            'is_active'            => 'boolean',
+            'fields'               => 'required|array|min:1',
+            'fields.*.field_type'  => 'required|in:' . self::FIELD_TYPES,
+            'fields.*.label'       => 'required|max:200',
+            'fields.*.options'     => 'nullable|array',
             'fields.*.is_required' => 'boolean',
-            'fields.*.order' => 'integer|min:0',
+            'fields.*.order'       => 'integer|min:0',
         ]);
 
+        $isActive = $request->boolean('is_active', true);
+
         $form = MonitoringForm::create([
-            'title' => $data['title'],
-            'description' => $data['description'] ?? null,
+            'title'         => $data['title'],
+            'description'   => $data['description'] ?? null,
             'department_id' => $data['department_id'] ?? null,
-            'created_by' => auth()->id(),
-            'is_active' => $request->boolean('is_active', true),
+            'created_by'    => auth()->id(),
+            'is_active'     => DB::raw($isActive ? 'true' : 'false'),
         ]);
 
         foreach ($data['fields'] as $index => $field) {
+            $isRequired = ! empty($field['is_required']);
             FormField::create([
-                'form_id' => $form->id,
-                'field_type' => $field['field_type'],
-                'label' => $field['label'],
-                'options' => $field['options'] ?? null,
-                'is_required' => ! empty($field['is_required']),
-                'order' => $field['order'] ?? $index,
+                'form_id'     => $form->id,
+                'field_type'  => $field['field_type'],
+                'label'       => $field['label'],
+                'options'     => $field['options'] ?? null,
+                'is_required' => DB::raw($isRequired ? 'true' : 'false'),
+                'order'       => $field['order'] ?? $index,
             ]);
         }
 
@@ -132,10 +137,10 @@ class MonitoringFormController extends Controller
         ]);
 
         $departments = Department::orderBy('name')->get();
-        $users = User::where('is_active', true)
-            ->whereIn('role', ['employee', 'dept_head', 'k3_officer', 'k3_manager'])
-            ->orderBy('name')
-            ->get();
+        $users = User::whereRaw('"is_active" = true')
+        ->whereIn('role', ['employee', 'dept_head', 'k3_officer', 'k3_manager'])
+        ->orderBy('name')
+        ->get();
 
         $myAssignments = collect();
         if (! auth()->user()->canManage()) {
@@ -161,44 +166,46 @@ class MonitoringFormController extends Controller
 
         return view('monitoring-forms.create', [
             'monitoringForm' => $monitoringForm,
-            'departments' => $departments,
+            'departments'    => $departments,
         ]);
     }
 
     public function update(Request $request, MonitoringForm $monitoringForm)
     {
         $data = $request->validate([
-            'title' => 'required|max:200',
-            'description' => 'nullable|string',
-            'department_id' => 'nullable|exists:departments,id',
-            'is_active' => 'boolean',
-            'fields' => 'required|array|min:1',
-            'fields.*.field_type' => 'required|in:' . self::FIELD_TYPES,
-            'fields.*.label' => 'required|max:200',
-            'fields.*.options' => 'nullable|array',
+            'title'                => 'required|max:200',
+            'description'          => 'nullable|string',
+            'department_id'        => 'nullable|exists:departments,id',
+            'is_active'            => 'boolean',
+            'fields'               => 'required|array|min:1',
+            'fields.*.field_type'  => 'required|in:' . self::FIELD_TYPES,
+            'fields.*.label'       => 'required|max:200',
+            'fields.*.options'     => 'nullable|array',
             'fields.*.is_required' => 'boolean',
-            'fields.*.order' => 'integer|min:0',
+            'fields.*.order'       => 'integer|min:0',
         ]);
 
         $oldValues = $monitoringForm->toArray();
+        $isActive  = $request->boolean('is_active', true);
 
         $monitoringForm->update([
-            'title' => $data['title'],
-            'description' => $data['description'] ?? null,
+            'title'         => $data['title'],
+            'description'   => $data['description'] ?? null,
             'department_id' => $data['department_id'] ?? null,
-            'is_active' => $request->boolean('is_active', true),
+            'is_active'     => DB::raw($isActive ? 'true' : 'false'),
         ]);
 
         $monitoringForm->fields()->delete();
 
         foreach ($data['fields'] as $index => $field) {
+            $isRequired = ! empty($field['is_required']);
             FormField::create([
-                'form_id' => $monitoringForm->id,
-                'field_type' => $field['field_type'],
-                'label' => $field['label'],
-                'options' => $field['options'] ?? null,
-                'is_required' => ! empty($field['is_required']),
-                'order' => $field['order'] ?? $index,
+                'form_id'     => $monitoringForm->id,
+                'field_type'  => $field['field_type'],
+                'label'       => $field['label'],
+                'options'     => $field['options'] ?? null,
+                'is_required' => DB::raw($isRequired ? 'true' : 'false'),
+                'order'       => $field['order'] ?? $index,
             ]);
         }
 
@@ -234,9 +241,9 @@ class MonitoringFormController extends Controller
     {
         $data = $request->validate([
             'assigned_to_type' => 'required|in:department,user',
-            'assigned_to_id' => 'required|integer',
-            'frequency' => 'required|in:daily,weekly,monthly,once,per_event,ad_hoc',
-            'due_date' => 'nullable|date',
+            'assigned_to_id'   => 'required|integer',
+            'frequency'        => 'required|in:daily,weekly,monthly,once,per_event,ad_hoc',
+            'due_date'         => 'nullable|date',
         ]);
 
         if ($data['assigned_to_type'] === 'department') {
@@ -246,12 +253,12 @@ class MonitoringFormController extends Controller
         }
 
         $assignment = FormAssignment::create([
-            'form_id' => $monitoringForm->id,
+            'form_id'          => $monitoringForm->id,
             'assigned_to_type' => $data['assigned_to_type'],
-            'assigned_to_id' => $data['assigned_to_id'],
-            'frequency' => $data['frequency'],
-            'due_date' => $data['due_date'] ?? null,
-            'created_by' => auth()->id(),
+            'assigned_to_id'   => $data['assigned_to_id'],
+            'frequency'        => $data['frequency'],
+            'due_date'         => $data['due_date'] ?? null,
+            'created_by'       => auth()->id(),
         ]);
 
         ActivityLogService::log(
@@ -311,7 +318,7 @@ class MonitoringFormController extends Controller
         foreach ($monitoringForm->fields as $field) {
             $key = 'field_' . $field->id;
             if ($field->field_type === 'photo') {
-                $required = $field->is_required && $request->input('status') === 'submitted' ? 'required' : 'nullable';
+                $required    = $field->is_required && $request->input('status') === 'submitted' ? 'required' : 'nullable';
                 $rules[$key] = $required . '|file|image|max:51200';
             } elseif ($field->is_required && $request->input('status') === 'submitted') {
                 $rules[$key] = 'required';
@@ -324,7 +331,7 @@ class MonitoringFormController extends Controller
 
         $data = [];
         foreach ($monitoringForm->fields as $field) {
-            $key = 'field_' . $field->id;
+            $key   = 'field_' . $field->id;
             $value = $request->input($key);
 
             if ($field->field_type === 'photo' && $request->hasFile($key)) {
@@ -340,25 +347,25 @@ class MonitoringFormController extends Controller
 
             $data[(string) $field->id] = [
                 'label' => $field->label,
-                'type' => $field->field_type,
+                'type'  => $field->field_type,
                 'value' => $value,
             ];
         }
 
         $departmentId = auth()->user()->employee?->department_id;
-        $status = $request->input('status');
+        $status       = $request->input('status');
 
         $submission = FormSubmission::updateOrCreate(
             [
-                'form_id' => $monitoringForm->id,
+                'form_id'       => $monitoringForm->id,
                 'assignment_id' => $assignment->id,
-                'submitted_by' => auth()->id(),
+                'submitted_by'  => auth()->id(),
             ],
             [
                 'department_id' => $departmentId,
-                'data' => $data,
-                'status' => $status,
-                'submitted_at' => $status === 'submitted' ? now() : null,
+                'data'          => $data,
+                'status'        => $status,
+                'submitted_at'  => $status === 'submitted' ? now() : null,
             ]
         );
 
@@ -367,7 +374,7 @@ class MonitoringFormController extends Controller
         }
 
         $action = $status === 'submitted' ? 'monitoring_form.submitted' : 'monitoring_form.draft_saved';
-        $desc = $status === 'submitted'
+        $desc   = $status === 'submitted'
             ? "Form \"{$monitoringForm->title}\" disubmit"
             : "Draft form \"{$monitoringForm->title}\" disimpan";
 
@@ -399,9 +406,9 @@ class MonitoringFormController extends Controller
 
         $submission->update([
             'approval_status' => 'approved',
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-            'review_notes' => $data['review_notes'] ?? null,
+            'reviewed_by'     => auth()->id(),
+            'reviewed_at'     => now(),
+            'review_notes'    => $data['review_notes'] ?? null,
         ]);
 
         ActivityLogService::log('form_submission.approved', 'monitoring_forms', "Submission form \"{$monitoringForm->title}\" disetujui", $submission);
@@ -428,9 +435,9 @@ class MonitoringFormController extends Controller
 
         $submission->update([
             'approval_status' => 'rejected',
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-            'review_notes' => $data['review_notes'] ?? null,
+            'reviewed_by'     => auth()->id(),
+            'reviewed_at'     => now(),
+            'review_notes'    => $data['review_notes'] ?? null,
         ]);
 
         ActivityLogService::log('form_submission.rejected', 'monitoring_forms', "Submission form \"{$monitoringForm->title}\" ditolak", $submission);
@@ -459,7 +466,7 @@ class MonitoringFormController extends Controller
             return;
         }
 
-        $user = auth()->user();
+        $user         = auth()->user();
         $departmentId = $user->employee?->department_id;
 
         $allowed = false;

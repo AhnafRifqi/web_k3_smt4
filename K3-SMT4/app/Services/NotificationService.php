@@ -55,7 +55,10 @@ class NotificationService
         ?string $link = null,
         array $data = []
     ): void {
-        $users = User::where('role', $role)->where('is_active', true)->get();
+        $users = User::where('role', $role)
+            ->whereRaw('"is_active" = true')
+            ->get();
+
         foreach ($users as $user) {
             self::send($user, $type, $title, $message, $link, $data);
         }
@@ -74,7 +77,7 @@ class NotificationService
     ): void {
         $users = User::whereHas('employee', function ($q) use ($departmentId) {
             $q->where('department_id', $departmentId);
-        })->where('is_active', true)->get();
+        })->whereRaw('"is_active" = true')->get();
 
         foreach ($users as $user) {
             self::send($user, $type, $title, $message, $link, $data);
@@ -92,7 +95,10 @@ class NotificationService
         ?string $link = null,
         array $data = []
     ): void {
-        $users = User::whereIn('role', $roles)->where('is_active', true)->get();
+        $users = User::whereIn('role', $roles)
+            ->whereRaw('"is_active" = true')
+            ->get();
+
         foreach ($users as $user) {
             self::send($user, $type, $title, $message, $link, $data);
         }
