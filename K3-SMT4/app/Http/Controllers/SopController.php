@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Sop;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SopController extends Controller
 {
@@ -91,5 +92,80 @@ class SopController extends Controller
     {
         $sop->delete();
         return redirect()->route('sops.index')->with('success', 'SOP berhasil dihapus.');
+    }
+
+    /**
+     * Download SOP file proxy.
+     * Fetches the file from Cloudinary server-side and serves it with proper headers.
+     */
+    public function download(Sop $sop)
+    {
+        if (!$sop->file_url) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        $extension = strtolower(pathinfo(parse_url($sop->file_url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
+        $filename = Str::slug($sop->name) . '.' . ($extension ?: 'pdf');
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $sop->file_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_TIMEOUT => 120,
+        ]);
+        $fileContent = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || $fileContent === false) {
+            abort(502, 'Gagal mengambil file dari penyimpanan.');
+        }
+
+        return response($fileContent, 200, [
+            'Content-Type' => $contentType ?: 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Length' => strlen($fileContent),
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
+    }
+
+    /**
+     * Stream SOP file inline in browser (for PDF preview).
+     */
+    public function stream(Sop $sop)
+    {
+        if (!$sop->file_url) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        $extension = strtolower(pathinfo(parse_url($sop->file_url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
+        $filename = Str::slug($sop->name) . '.' . ($extension ?: 'pdf');
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $sop->file_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_TIMEOUT => 120,
+        ]);
+        $fileContent = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || $fileContent === false) {
+            abort(502, 'Gagal mengambil file dari penyimpanan.');
+        }
+
+        return response($fileContent, 200, [
+            'Content-Type' => $contentType ?: 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Content-Length' => strlen($fileContent),
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 }

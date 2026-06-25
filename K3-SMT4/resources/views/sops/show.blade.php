@@ -5,6 +5,13 @@
 @section('page-subtitle', 'Informasi lengkap SOP')
 
 @section('content')
+@php
+    $fileExt = $sop->file_url
+        ? strtolower(pathinfo(parse_url($sop->file_url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION))
+        : null;
+    $isImage = in_array($fileExt, ['jpg', 'jpeg', 'png'], true);
+    $isPdf = $fileExt === 'pdf';
+@endphp
 <div class="space-y-5">
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -40,8 +47,20 @@
                 </div>
                 @if($sop->file_url)
                 <div>
-                    <h3 class="text-sm text-gray-500 dark:text-gray-400">File SOP</h3>
-                    <a href="{{ $sop->file_url }}" target="_blank" class="text-blue-600 hover:underline">Lihat PDF</a>
+                    <h3 class="text-sm text-gray-500 dark:text-gray-400 mb-2">File SOP</h3>
+                    @if($isImage)
+                    <img src="{{ $sop->file_url }}" alt="{{ $sop->name }}" class="max-w-full max-h-64 rounded-lg border border-gray-200 dark:border-gray-700 object-contain">
+                    @endif
+                    <div class="flex flex-wrap gap-3 mt-2">
+                    @if($isPdf)
+                        <a href="{{ route('sops.stream', $sop) }}" target="_blank" class="inline-flex items-center gap-2 text-blue-600 hover:underline font-medium">
+                            Lihat PDF
+                        </a>
+                        @endif
+                        <a href="{{ route('sops.download', $sop) }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
+                            Unduh File
+                        </a>
+                    </div>
                 </div>
                 @endif
             </div>
