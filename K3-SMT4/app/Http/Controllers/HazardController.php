@@ -41,7 +41,7 @@ class HazardController extends Controller
     {
         $departments = Department::orderBy('name')->get();
         $employees = Employee::where('status', 'aktif')->orderBy('name')->get();
-        $sops = Sop::where('status', 'aktif')->orderBy('title')->get();
+        $sops = Sop::where('status', 'aktif')->orderBy('name')->get();
         return view('hazards.create', compact('departments', 'employees', 'sops'));
     }
 
@@ -89,7 +89,7 @@ class HazardController extends Controller
     {
         $departments = Department::orderBy('name')->get();
         $employees = Employee::where('status', 'aktif')->orderBy('name')->get();
-        $sops = Sop::where('status', 'aktif')->orderBy('title')->get();
+        $sops = Sop::where('status', 'aktif')->orderBy('name')->get();
         return view('hazards.edit', compact('hazard', 'departments', 'employees', 'sops'));
     }
 

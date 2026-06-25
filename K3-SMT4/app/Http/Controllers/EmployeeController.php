@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\User;
 use App\Exports\EmployeesExport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
