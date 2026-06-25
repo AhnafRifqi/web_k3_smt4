@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\User;
 use App\Exports\EmployeesExport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -95,7 +96,7 @@ class EmployeeController extends Controller
     public function create()
     {
         $departments = Department::active()->get();
-        $pendingUsers = User::where('is_validated', false)->get();
+        $pendingUsers = User::where('is_validated', DB::raw('false'))->get();
         return view('employees.create', compact('departments', 'pendingUsers'));
     }
 

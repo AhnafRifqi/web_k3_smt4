@@ -41,8 +41,8 @@ class RegisteredUserController extends Controller
         'name' => $request->name,
         'email' => $request->email,
         'password' => Hash::make($request->password),
-        'role' => 'viewer', // <-- Ubah dari 'pending' menjadi 'viewer'
-        'is_validated' => 0, // Biarkan ini tetap 0 agar statusnya tetap perlu divalidasi admin
+        'role' => 'viewer',
+        'is_validated' => false,
     ]);
 
         event(new Registered($user));
