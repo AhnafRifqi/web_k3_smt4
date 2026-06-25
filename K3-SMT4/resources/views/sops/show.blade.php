@@ -13,7 +13,10 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ $sop->code }} · {{ ucfirst($sop->status) }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                {{-- HANYA Admin, Manager, dan Officer yang bisa Edit --}}
+                @if(auth()->check() && in_array(auth()->user()->role, ['super_admin', 'k3_manager', 'k3_officer']))
                 <a href="{{ route('sops.edit', $sop) }}" class="btn-secondary">Edit</a>
+                @endif
                 <a href="{{ route('sops.index') }}" class="btn-secondary">Kembali</a>
             </div>
         </div>

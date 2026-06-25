@@ -7,10 +7,13 @@
 @section('content')
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
     <div class="flex items-center gap-2">
+        {{-- Tombol HANYA muncul jika role BUKAN auditor dan BUKAN viewer --}}
+        @if(auth()->check() && !in_array(auth()->user()->role, ['auditor', 'viewer']))
         <a href="{{ route('incidents.create') }}" class="btn-primary inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Report Incident
         </a>
+        @endif
     </div>
 </div>
 
@@ -45,9 +48,7 @@
             @if(auth()->user()->isSuperAdmin() || auth()->user()->isK3Manager() || auth()->user()->isK3Officer())
             <select name="department_id" class="form-input">
                 <option value="">All Departments</option>
-                @foreach($departments as $dept)
-                <option value="{{ $dept->id }}" @selected(request('department_id') == $dept->id)>{{ $dept->name }}</option>
-                @endforeach
+                <option value="{{ $dept->id ?? '' }}" @selected(request('department_id') == ($dept->id ?? ''))>{{ $dept->name ?? 'Dept' }}</option>
             </select>
             @endif
             <button type="submit" class="btn-primary bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium">Filter</button>
